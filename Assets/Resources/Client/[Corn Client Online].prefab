@@ -164,6 +164,7 @@ MonoBehaviour:
   m_PlayerController: {fileID: 0}
   m_PlayerRenderPrefabs:
   - {fileID: 555365335110124448, guid: 35ba1c4e28397394593efc927034fa83, type: 3}
+  - {fileID: 6981470601020151392, guid: f664c332fccf0fa4f944002281a8fc2b, type: 3}
   interactionUpdater: {fileID: 2774371546218291109}
   m_CameraControllerPrefabs:
   - {fileID: 2555420394471349852, guid: aa787a98e472e4f4184d8a4871eac7ef, type: 3}
