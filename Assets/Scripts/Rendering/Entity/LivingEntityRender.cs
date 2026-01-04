@@ -14,7 +14,7 @@ namespace CraftSharp.Rendering
         public readonly TrackedValue<float> HeadYaw = new(0F);
         protected float lastHeadYaw = 0F;
 
-        private float deathAnimationTime = 0F;
+        private float deathTiltAngle = 0F;
         
         protected double currentElapsedPitchUpdateMilSec = 0;
         protected double currentElapsedHeadYawUpdateMilSec = 0;
@@ -71,7 +71,7 @@ namespace CraftSharp.Rendering
                     }
                     else
                     {
-                        materialAssigner.HurtTime = 0F;
+                        materialAssigner.HurtTime = Mathf.Min(materialAssigner.HurtTime, 0.3F);
                     }
                 }
             };
@@ -95,16 +95,25 @@ namespace CraftSharp.Rendering
             {
                 Yaw.Value = HeadYaw.Value;
             }
-
-            if (_deathAnimationStarted)
+        }
+        
+        public override void UpdateDeath()
+        {
+            base.UpdateDeath();
+            
+            if (_deathStarted)
             {
-                deathAnimationTime += Time.deltaTime * 180F;
-                deathAnimationTime = Mathf.Clamp(deathAnimationTime, 0, 90F);
+                deathTiltAngle += Time.deltaTime * 180F;
+                deathTiltAngle = Mathf.Clamp(deathTiltAngle, 0, 90F);
                 
                 // Use death animation time as rotation around forward axis
                 var newEulerAngles = _visualTransform.eulerAngles;
-                newEulerAngles.z += deathAnimationTime;
+                newEulerAngles.z += deathTiltAngle;
                 _visualTransform.eulerAngles = newEulerAngles;
+            }
+            else
+            {
+                deathTiltAngle = 0F;
             }
         }
     }

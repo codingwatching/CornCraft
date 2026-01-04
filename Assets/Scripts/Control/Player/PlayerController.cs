@@ -134,7 +134,7 @@ namespace CraftSharp.Control
                     child.gameObject.layer = gameObject.layer;
                 }
 
-                OnPlayerUpdate += (velocity, _, _) =>
+                OnPlayerUpdate += (velocity, interval, _) =>
                 {
                     // Update player render velocity
                     m_PlayerRender.SetVisualMovementVelocity(velocity);
@@ -145,6 +145,9 @@ namespace CraftSharp.Control
                         var onFire = (m_PlayerRender.SharedFlags.Value & 0x01) != 0;
                         m_PlayerRender.UpdateFireBillboard(onFire, m_CameraController.RenderCamera.transform);
                     }
+                    
+                    // Update death animation(because UpdateTransform is not called for player render)
+                    m_PlayerRender.UpdateDeath();
                     
                     // Update render
                     m_PlayerRender.UpdateAnimation(0.05F);
@@ -207,6 +210,7 @@ namespace CraftSharp.Control
 #nullable enable
 
         private Action<GameModeUpdateEvent>? gameModeCallback;
+        private Action<HealthUpdateEvent>? healthCallback;
 
         public delegate void ItemStateEventHandler(CurrentItemState weaponState);
 
@@ -257,6 +261,19 @@ namespace CraftSharp.Control
             // Register gamemode events for updating gamemode
             gameModeCallback = e => SetGameMode(e.GameMode);
             EventManager.Instance.Register(gameModeCallback);
+
+            // Register health update events for resetting hurt time
+            healthCallback = e =>
+            {
+                if (m_PlayerRender.Type.MetaSlotByName.TryGetValue("data_health_id", out var metaSlot1))
+                {
+                    m_PlayerRender.UpdateMetadata(new Dictionary<int, object>
+                    {
+                        [metaSlot1] = e.Health
+                    });
+                }
+            };
+            EventManager.Instance.Register(healthCallback);
         }
 
         private void FixedUpdate()
@@ -305,6 +322,9 @@ namespace CraftSharp.Control
 
             if (gameModeCallback is not null)
                 EventManager.Instance.Unregister(gameModeCallback);
+            
+            if (healthCallback is not null)
+                EventManager.Instance.Unregister(healthCallback);
         }
 
         private void SetGameMode(GameMode gameMode)

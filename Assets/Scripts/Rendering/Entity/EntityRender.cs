@@ -152,6 +152,11 @@ namespace CraftSharp.Rendering
                 {
                     Health.Value = health;
                     MaxHealth.Value = Mathf.Max(MaxHealth.Value, health);
+
+                    if (health > 0F)
+                    {
+                        _deathStarted = false;
+                    }
                 }
             }
 
@@ -220,7 +225,7 @@ namespace CraftSharp.Rendering
         /// <summary>
         /// Whether the current entity has started death animation
         /// </summary>
-        protected bool _deathAnimationStarted = false;
+        protected bool _deathStarted = false;
 
         [SerializeField] protected Transform _infoAnchor;
         [SerializeField] protected Transform _visualTransform;
@@ -391,6 +396,14 @@ namespace CraftSharp.Rendering
             receivedVelocity = velocity;
         }
 
+        public virtual void UpdateDeath()
+        {
+            if (!_deathStarted && Health.Value <= 0F)
+            {
+                _deathStarted = true;
+            }
+        }
+
         protected virtual void UpdateTransform(float tickMilSec, Transform cameraTransform)
         {
             // Update elapsed time in current tick
@@ -471,11 +484,6 @@ namespace CraftSharp.Rendering
 
         public virtual void ManagedUpdate(float tickMilSec, Transform cameraTransform)
         {
-            if (!_deathAnimationStarted && Health.Value <= 0F)
-            {
-                _deathAnimationStarted = true;
-            }
-            
             UpdateTransform(tickMilSec, cameraTransform);
             
             // Check on fire flag and update billboard
@@ -483,6 +491,8 @@ namespace CraftSharp.Rendering
             UpdateFireBillboard(onFire, cameraTransform);
 
             UpdateAnimation(tickMilSec);
+            
+            UpdateDeath();
         }
         
         public void UpdateFireBillboard(bool enable, Transform cameraTransform)
@@ -544,9 +554,13 @@ namespace CraftSharp.Rendering
                 name = "Fire Billboard Quad Stack"
             };
 
-            var (uvs, anim) = ResourcePackManager.Instance.GetUVs(FIRE_0_ID, new Vector4(0, 0, 1, 1), 0);
-            var baseUv0 = uvs.Select(x => (Vector3) x).ToArray();
-            var baseUv1 = Enumerable.Repeat((Vector4) anim, 4).ToArray();
+            var (uvs0, anim0) = ResourcePackManager.Instance.GetUVs(FIRE_0_ID, new Vector4(0, 0, 1, 1), 0);
+            var baseUv0 = uvs0.Select(x => (Vector3) x).ToArray();
+            var baseUv1 = Enumerable.Repeat((Vector4) anim0, 4).ToArray();
+            
+            var (uvs1, anim1) = ResourcePackManager.Instance.GetUVs(FIRE_1_ID, new Vector4(0, 0, 1, 1), 0);
+            var baseUv2 = uvs1.Select(x => (Vector3) x).ToArray();
+            var baseUv3 = Enumerable.Repeat((Vector4) anim1, 4).ToArray();
 
             // Multiple quads with decreasing height; lower quads sit slightly closer (negative Z)
             var heights = new[] { 1.5F, 1.0F, 0.5F };
@@ -567,8 +581,8 @@ namespace CraftSharp.Rendering
                 vertices.Add(new Vector3(-0.5F, 0F, zOffset));
                 vertices.Add(new Vector3( 0.5F, 0F, zOffset));
 
-                uv0.AddRange(baseUv0);
-                uv1.AddRange(baseUv1);
+                uv0.AddRange(i % 2 == 0 ? baseUv0 : baseUv2);
+                uv1.AddRange(i % 2 == 0 ? baseUv1 : baseUv3);
 
                 triangles.AddRange(new[] { vStart + 0, vStart + 1, vStart + 2, vStart + 2, vStart + 1, vStart + 3 });
             }
