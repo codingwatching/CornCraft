@@ -220,7 +220,7 @@ namespace CraftSharp.Rendering
         /// <summary>
         /// Whether the current entity has started death animation
         /// </summary>
-        private bool _deathAnimationStarted = false;
+        protected bool _deathAnimationStarted = false;
 
         [SerializeField] protected Transform _infoAnchor;
         [SerializeField] protected Transform _visualTransform;

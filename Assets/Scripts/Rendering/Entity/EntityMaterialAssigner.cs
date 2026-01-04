@@ -103,21 +103,118 @@ namespace CraftSharp.Rendering
         [SerializeField] private EntityMaterialEntry[] m_MaterialEntries = { };
         public EntityMaterialEntry[] MaterialEntries => m_MaterialEntries;
 
+        public float HurtTime { get; set; }  = 0F;
+        private static readonly int BASE_COLOR = Shader.PropertyToID("_BaseColor");
+        private readonly Dictionary<Renderer, Color> m_OriginalColors = new();
+        private MaterialPropertyBlock m_PropertyBlock;
+
+        private void Awake()
+        {
+            m_PropertyBlock = new MaterialPropertyBlock();
+        }
+
+        private void Update()
+        {
+            if (HurtTime > 0F)
+            {
+                HurtTime -= Time.deltaTime;
+                
+                if (HurtTime <= 0F)
+                {
+                    HurtTime = 0F;
+                    // Restore original colors
+                    RestoreOriginalColors();
+                }
+                else
+                {
+                    // Apply red tint
+                    ApplyHurtTint();
+                }
+            }
+        }
+
+        private void ApplyHurtTint()
+        {
+            // Red-ish color for hurt effect
+            var hurtColor = new Color(1F, 0.5F, 0.5F, 1F);
+
+            foreach (var entry in m_MaterialEntries)
+            {
+                foreach (var r in entry.Renderers)
+                {
+                    if (!r) continue;
+
+                    // Store original color if not already stored
+                    if (!m_OriginalColors.ContainsKey(r))
+                    {
+                        var material = r.sharedMaterial;
+                        if (material)
+                        {
+                            // Try to get color from _BaseColor or _Color property
+                            if (material.HasProperty(BASE_COLOR))
+                            {
+                                m_OriginalColors[r] = material.GetColor(BASE_COLOR);
+                            }
+                            else
+                            {
+                                m_OriginalColors[r] = material.color;
+                            }
+                        }
+                        else
+                        {
+                            m_OriginalColors[r] = Color.white;
+                        }
+                    }
+
+                    // Apply hurt color using MaterialPropertyBlock
+                    r.GetPropertyBlock(m_PropertyBlock);
+                    
+                    if (r.sharedMaterial)
+                    {
+                        if (r.sharedMaterial.HasProperty(BASE_COLOR))
+                        {
+                            m_PropertyBlock.SetColor(BASE_COLOR, hurtColor);
+                        }
+                    }
+                    
+                    r.SetPropertyBlock(m_PropertyBlock);
+                }
+            }
+        }
+
+        private void RestoreOriginalColors()
+        {
+            foreach (var entry in m_MaterialEntries)
+            {
+                foreach (var r in entry.Renderers)
+                {
+                    if (!r) continue;
+
+                    if (m_OriginalColors.TryGetValue(r, out var originalColor))
+                    {
+                        // Clear property block to restore original material color
+                        r.SetPropertyBlock(null);
+                        m_OriginalColors.Remove(r);
+                    }
+                }
+            }
+        }
+
         public void InitializeRenderers()
         {
             var renderers = gameObject.GetComponentsInChildren<Renderer>();
             var entries = new Dictionary<Material, List<Renderer>>();
 
-            foreach (var renderer in renderers)
+            foreach (var r in renderers)
             {
-                if (!renderer.sharedMaterial) continue;
+                if (!r.sharedMaterial) continue;
 
-                if (!entries.ContainsKey(renderer.sharedMaterial))
+                if (!entries.ContainsKey(r.sharedMaterial))
                 {
-                    entries.Add(renderer.sharedMaterial, new());
+                    entries.Add(r.sharedMaterial, new List<Renderer>());
                 }
                 
-                entries[renderer.sharedMaterial].Add(renderer);
+                entries[r.sharedMaterial].Add(r);
             }
 
             m_MaterialEntries = entries.Select(x => new EntityMaterialEntry(
@@ -187,8 +284,6 @@ namespace CraftSharp.Rendering
             var client = CornApp.CurrentClient!;
             var matManager = client.EntityMaterialManager;
 
-            var isRagdoll = GetComponent<EntityRagdoll>();
-
             //var info = updatedMeta.Select(x => entityType.MetaEntries[x].Name + ": [" + metadata?[x] + "],");
             //Debug.Log($"Updating meta ({gameObject.name}):\n{string.Join("\n", info)}");
 
@@ -211,31 +306,23 @@ namespace CraftSharp.Rendering
                     continue;
                 }
 
-                if (isRagdoll)
+                matManager.ApplyMaterial(entry.RenderType, textureId, entry.DefaultMaterial, matInstance =>
                 {
-                    var matInstance = new Material(matManager.EntityDissolveMaterial);
-                    var entry1 = entry;
-                    matManager.ApplyTextureOrSkin(textureId, tex =>
-                    {
-                        matInstance.SetTexture(matManager.EntityDissolveMaterialTextureName, tex);
-                        matInstance.SetColor(matManager.EntityDissolveMaterialColorName, matManager.EntityBaseColor);
-                        AssignMaterialToRenderer(entry1.Renderers, matInstance);
-                    });
-                }
-                else
-                {
-                    matManager.ApplyMaterial(entry.RenderType, textureId, entry.DefaultMaterial, matInstance =>
-                    {
-                        AssignMaterialToRenderer(entry.Renderers, matInstance);
-                    });
-                }
+                    AssignMaterialToRenderer(entry.Renderers, matInstance);
+                });
             }
         }
 
-        private static void AssignMaterialToRenderer(Renderer[] renderers, Material matInstance)
+        private void AssignMaterialToRenderer(Renderer[] renderers, Material matInstance)
         {
             for (int j = 0; j < renderers.Length; j++)
             {
+                // Clear stored original color if material is being reassigned
+                if (m_OriginalColors.ContainsKey(renderers[j]))
+                {
+                    m_OriginalColors.Remove(renderers[j]);
+                }
+                
                 renderers[j].sharedMaterial = matInstance;
             }
         }
@@ -244,8 +331,6 @@ namespace CraftSharp.Rendering
         {
             var client = CornApp.CurrentClient!;
             var matManager = client.EntityMaterialManager;
-
-            var isRagdoll = GetComponent<EntityRagdoll>();
 
             for (int i = 0; i < m_MaterialEntries.Length; i++)
             {
@@ -271,27 +356,12 @@ namespace CraftSharp.Rendering
                     textureId = ResourceLocation.FromString(entry.TextureId);
                 }
                 
-                if (isRagdoll)
+                matManager.ApplyMaterial(entry.RenderType, textureId, entry.DefaultMaterial, matInstance =>
                 {
-                    var matInstance = new Material(matManager.EntityDissolveMaterial);
-                    matManager.ApplyTextureOrSkin(textureId, texture =>
-                    {
-                        matInstance.SetTexture(matManager.EntityDissolveMaterialTextureName, texture);
-                        matInstance.SetColor(matManager.EntityDissolveMaterialColorName, matManager.EntityBaseColor);
-                        AssignMaterialToRenderer(entry.Renderers, matInstance);
+                    AssignMaterialToRenderer(entry.Renderers, matInstance);
 
-                        callbackForEach.Invoke(matManager, textureId, matInstance);
-                    });
-                }
-                else
-                {
-                    matManager.ApplyMaterial(entry.RenderType, textureId, entry.DefaultMaterial, matInstance =>
-                    {
-                        AssignMaterialToRenderer(entry.Renderers, matInstance);
-
-                        callbackForEach.Invoke(matManager, textureId, matInstance);
-                    });
-                }
+                    callbackForEach.Invoke(matManager, textureId, matInstance);
+                });
             }
         }
     }

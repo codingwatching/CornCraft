@@ -13,6 +13,8 @@ namespace CraftSharp.Rendering
         /// </summary>
         public readonly TrackedValue<float> HeadYaw = new(0F);
         protected float lastHeadYaw = 0F;
+
+        private float deathAnimationTime = 0F;
         
         protected double currentElapsedPitchUpdateMilSec = 0;
         protected double currentElapsedHeadYawUpdateMilSec = 0;
@@ -57,6 +59,22 @@ namespace CraftSharp.Rendering
                 lastHeadYaw = head!.eulerAngles.y;
                 currentElapsedHeadYawUpdateMilSec = 0.0;
             };
+
+            Health.OnValueUpdate += (prevHealth, newHealth) =>
+            {
+                // Apply hurt tint if health reduced
+                if (TryGetComponent(out EntityMaterialAssigner materialAssigner))
+                {
+                    if (newHealth < prevHealth)
+                    {
+                        materialAssigner.HurtTime = newHealth <= 0F ? float.PositiveInfinity : 0.3F;
+                    }
+                    else
+                    {
+                        materialAssigner.HurtTime = 0F;
+                    }
+                }
+            };
         }
 
         protected override void UpdateTransform(float tickMilSec, Transform cameraTransform)
@@ -76,6 +94,17 @@ namespace CraftSharp.Rendering
             if (Mathf.Abs(Mathf.DeltaAngle(Yaw.Value, HeadYaw.Value)) > 75F)
             {
                 Yaw.Value = HeadYaw.Value;
+            }
+
+            if (_deathAnimationStarted)
+            {
+                deathAnimationTime += Time.deltaTime * 180F;
+                deathAnimationTime = Mathf.Clamp(deathAnimationTime, 0, 90F);
+                
+                // Use death animation time as rotation around forward axis
+                var newEulerAngles = _visualTransform.eulerAngles;
+                newEulerAngles.z += deathAnimationTime;
+                _visualTransform.eulerAngles = newEulerAngles;
             }
         }
     }

@@ -37,33 +37,33 @@ namespace CraftSharp.UI
             }
         }
 
-        public override void SetInfo(EntityRender entityRender)
+        public override void SetInfo(EntityRender sourceEntityRender)
         {
             // Unregister events for previous entity
             // NOTE: It is not recommended to call SetInfo for more than one entity
-            if (this.entityRender)
+            if (entityRender)
             {
-                this.entityRender.MaxHealth.OnValueUpdate -= UpdateMaxHealth;
-                this.entityRender.Health.OnValueUpdate -= UpdateHealth;
+                entityRender.MaxHealth.OnValueUpdate -= UpdateMaxHealth;
+                entityRender.Health.OnValueUpdate -= UpdateHealth;
             }
 
-            this.entityRender = entityRender;
+            entityRender = sourceEntityRender;
 
             // Register events for new entity
-            if (this.entityRender)
+            if (entityRender)
             {
-                this.entityRender.MaxHealth.OnValueUpdate += UpdateMaxHealth;
-                this.entityRender.Health.OnValueUpdate += UpdateHealth;
+                entityRender.MaxHealth.OnValueUpdate += UpdateMaxHealth;
+                entityRender.Health.OnValueUpdate += UpdateHealth;
 
-                UpdateHealth(0F, this.entityRender.Health.Value);
-                UpdateMaxHealth(0F, this.entityRender.MaxHealth.Value);
+                UpdateHealth(0F, entityRender.Health.Value);
+                UpdateMaxHealth(0F, entityRender.MaxHealth.Value);
             }
 
             if (levelText)
             {
                 // This is used for mimicking the UI format of some anime game
                 // This text is no longer updated after first set
-                levelText.text = string.Format(textFormat, entityRender.MaxHealth.Value * 2);
+                levelText.text = string.Format(textFormat, sourceEntityRender.MaxHealth.Value * 2);
             }
         }
     }

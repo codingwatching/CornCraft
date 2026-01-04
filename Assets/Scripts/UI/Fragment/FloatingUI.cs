@@ -9,7 +9,7 @@ namespace CraftSharp.UI
     {
         protected EntityRender entityRender;
 
-        public abstract void SetInfo(EntityRender entity);
+        public abstract void SetInfo(EntityRender sourceEntityRender);
 
         public virtual void Destroy(Action callback)
         {

@@ -15,13 +15,13 @@ namespace CraftSharp.UI
         [SerializeField] private TMP_Text descriptionText;
         private Action destroyCallback;
 
-        public override void SetInfo(EntityRender entityRender)
+        public override void SetInfo(EntityRender sourceEntityRender)
         {
-            this.entityRender = entityRender;
+            this.entityRender = sourceEntityRender;
 
             if (nameText)
             {
-                nameText.text = entityRender.GetDisplayName();
+                nameText.text = sourceEntityRender.GetDisplayName();
             }
 
             if (descriptionText)
