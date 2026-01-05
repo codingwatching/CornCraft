@@ -13,8 +13,8 @@ namespace CraftSharp.Rendering
     public class EntityRender : MonoBehaviour
     {
         protected const float MOVE_THRESHOLD = 5F * 5F; // Treat as teleport if move more than 5 meters at once
-        protected static readonly ResourceLocation FIRE_0_ID = new("block/fire_0");
-        protected static readonly ResourceLocation FIRE_1_ID = new("block/fire_1");
+        private static readonly ResourceLocation FIRE_0_ID = new("block/fire_0");
+        private static readonly ResourceLocation FIRE_1_ID = new("block/fire_1");
 
         /// <summary>
         /// ID of the entity on the Minecraft server
@@ -71,11 +71,6 @@ namespace CraftSharp.Rendering
         /// Entity velocity received from server
         /// </summary>
         private Vector3? receivedVelocity;
-        
-        public string GetDebugText()
-        {
-            return $"{(int) currentElapsedMovementUpdateMilSec} / {(int) movementUpdateInterval} ({(int) (currentElapsedMovementUpdateMilSec / movementUpdateInterval * 100.0)}%)";
-        }
 
         /// <summary>
         /// Entity yaw
@@ -250,8 +245,6 @@ namespace CraftSharp.Rendering
             get => _visualTransform ? _visualTransform : transform;
             protected set => _visualTransform = value;
         }
-
-        public GameObject FloatingInfoPrefab;
 
         /// <summary>
         /// A number made from the entity's numeral id, used in animations to prevent

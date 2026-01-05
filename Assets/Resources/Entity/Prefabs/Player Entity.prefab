@@ -55,7 +55,6 @@ MonoBehaviour:
   ObjectData: -1
   _infoAnchor: {fileID: 743968433924148952}
   _visualTransform: {fileID: 564165796040106859}
-  FloatingInfoPrefab: {fileID: 0}
   head: {fileID: 354095174379655454}
   cycleTime: 0.6
   legAngle: 40

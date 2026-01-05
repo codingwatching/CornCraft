@@ -8,15 +8,41 @@ namespace CraftSharp.UI
 {
     public class FloatingUIManager : MonoBehaviour
     {
+        [SerializeField] private GameObject defaultFloatingUIPrefab;
+        [SerializeField] private GameObject passiveFloatingUIPrefab;
+        [SerializeField] private GameObject hostileFloatingUIPrefab;
+
+        private readonly HashSet<ResourceLocation> infoTagBlacklist = new()
+        {
+            EntityType.ITEM_ID
+        };
+        
         private readonly Dictionary<int, FloatingUI> entityFloatingUIs = new();
         public AnimationCurve UIScaleCurve;
 
         private void AddForEntity(int entityId, EntityRender render)
         {
             if (!render || entityFloatingUIs.ContainsKey(entityId)) return;
-            
-            var infoTagPrefab = render.FloatingInfoPrefab;
-            if (!infoTagPrefab) return;
+
+            var type = render.Type;
+
+            if (infoTagBlacklist.Contains(type.TypeId))
+            {
+                return;
+            }
+
+            var infoTagPrefab = type.Category switch
+            {
+                EntityCategory.Creature => passiveFloatingUIPrefab,
+                EntityCategory.Axolotls => passiveFloatingUIPrefab,
+                EntityCategory.UndergroundWaterCreature => passiveFloatingUIPrefab,
+                EntityCategory.WaterCreature => passiveFloatingUIPrefab,
+                EntityCategory.Ambient => passiveFloatingUIPrefab,
+                EntityCategory.WaterAmbient => passiveFloatingUIPrefab,
+                EntityCategory.Monster => hostileFloatingUIPrefab,
+                
+                _ => defaultFloatingUIPrefab
+            };
 
             // Make a new floating UI here...
             var fUIObj = Instantiate(infoTagPrefab, render.InfoAnchor, false);
@@ -68,7 +94,7 @@ namespace CraftSharp.UI
                 {
                     var render = entityManager.GetEntityRender(entityId);
 
-                    if (render && render.FloatingInfoPrefab)
+                    if (render)
                     {
                         AddForEntity(entityId, render);
                         //Debug.Log($"Adding floating UI for #{validTagOwners[i]}");

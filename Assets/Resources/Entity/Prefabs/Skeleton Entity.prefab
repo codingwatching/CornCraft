@@ -84,10 +84,8 @@ MonoBehaviour:
   IsCustomNameVisible: 0
   CustomName: 
   ObjectData: -1
-  Pose: 0
   _infoAnchor: {fileID: 7715190861722759685}
   _visualTransform: {fileID: 4630957584636829608}
-  FloatingInfoPrefab: {fileID: 5300854894600073256, guid: 608e9410959fcf54b91dae8f1208b8eb, type: 3}
   head: {fileID: 3063450301338688811}
   cycleTime: 1.2
   legAngle: 40

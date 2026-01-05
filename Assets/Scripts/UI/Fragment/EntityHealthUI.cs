@@ -7,9 +7,8 @@ namespace CraftSharp.UI
 {
     public class EntityHealthUI : FloatingUI
     {
-        [SerializeField] private TMP_Text levelText;
+        [SerializeField] private TMP_Text nameText;
         [SerializeField] private BaseValueBar healthBar;
-        [SerializeField] private string textFormat = "Lv.{0:0}";
 
         private void UpdateMaxHealth(float prevVal, float newVal)
         {
@@ -59,11 +58,11 @@ namespace CraftSharp.UI
                 UpdateMaxHealth(0F, entityRender.MaxHealth.Value);
             }
 
-            if (levelText)
+            if (nameText)
             {
                 // This is used for mimicking the UI format of some anime game
                 // This text is no longer updated after first set
-                levelText.text = string.Format(textFormat, sourceEntityRender.MaxHealth.Value * 2);
+                nameText.text = sourceEntityRender.GetDisplayName();
             }
         }
     }

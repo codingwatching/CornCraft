@@ -52,11 +52,8 @@ MonoBehaviour:
   IsCustomNameVisible: 0
   CustomName: 
   ObjectData: -1
-  Pose: 0
   _infoAnchor: {fileID: 1002350574447168253}
   _visualTransform: {fileID: 7182432277891111638}
-  ragdollPrefab: {fileID: 0}
-  FloatingInfoPrefab: {fileID: 0}
 --- !u!1 &2716930875251792988
 GameObject:
   m_ObjectHideFlags: 0
@@ -165,7 +162,7 @@ PrefabInstance:
       value: 10
       objectReference: {fileID: 0}
     - target: {fileID: -250075705364349728, guid: fd272930b87934e418ad1e65e4055f14, type: 3}
-      propertyPath: m_Materials.Array.data[0]
+      propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: 9943acda5d5d0a741a40aeabab064160, type: 2}
     - target: {fileID: 919132149155446097, guid: fd272930b87934e418ad1e65e4055f14, type: 3}
@@ -177,7 +174,7 @@ PrefabInstance:
       value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 8280704227580990285, guid: fd272930b87934e418ad1e65e4055f14, type: 3}
-      propertyPath: m_Materials.Array.data[0]
+      propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: 9943acda5d5d0a741a40aeabab064160, type: 2}
     m_RemovedComponents: []

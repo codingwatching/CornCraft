@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1001 &864219521742609785
+--- !u!1001 &5593372567337832816
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
@@ -10,7 +10,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 5300854894600073256, guid: 10ce65293b2334442bc3ad9f32eaa1e4, type: 3}
       propertyPath: m_Name
-      value: EntityPassiveHealthUI
+      value: EntityHostileHealthUI
       objectReference: {fileID: 0}
     - target: {fileID: 7461499628501205960, guid: 10ce65293b2334442bc3ad9f32eaa1e4, type: 3}
       propertyPath: m_Pivot.x
@@ -94,15 +94,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 9039819228523485443, guid: 10ce65293b2334442bc3ad9f32eaa1e4, type: 3}
       propertyPath: normalColor.b
-      value: 0.14117648
+      value: 0.31764707
       objectReference: {fileID: 0}
     - target: {fileID: 9039819228523485443, guid: 10ce65293b2334442bc3ad9f32eaa1e4, type: 3}
       propertyPath: normalColor.g
-      value: 0.7882353
+      value: 0.19607843
       objectReference: {fileID: 0}
     - target: {fileID: 9039819228523485443, guid: 10ce65293b2334442bc3ad9f32eaa1e4, type: 3}
       propertyPath: normalColor.r
-      value: 0.54901963
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
