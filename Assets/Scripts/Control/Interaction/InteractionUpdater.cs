@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
+using Unity.Mathematics;
 
 using CraftSharp.Event;
 using CraftSharp.Inventory;
@@ -50,7 +51,7 @@ namespace CraftSharp.Control
         private const float BLOCK_INTERACTION_RADIUS_SQR = BLOCK_INTERACTION_RADIUS * BLOCK_INTERACTION_RADIUS; // BLOCK_INTERACTION_RADIUS ^ 2
         private const float BLOCK_INTERACTION_RADIUS_SQR_PLUS = (BLOCK_INTERACTION_RADIUS + 0.5F) * (BLOCK_INTERACTION_RADIUS + 0.5F); // (BLOCK_INTERACTION_RADIUS + 0.5f) ^ 2
 
-        private const float CREATIVE_INSTA_BREAK_COOLDOWN = 0.3F;
+        private const float CREATIVE_INSTA_BREAK_COOLDOWN = 0.2F;
         private const float MINIMUM_INSTA_BREAK_COOLDOWN = 0.05F;
 
         private const float PLACE_BLOCK_COOLDOWN = 0.2F;
@@ -156,7 +157,10 @@ namespace CraftSharp.Control
                 }
 
                 // Update shape even if target location is not changed (the block itself may change)
-                blockSelectionBox.UpdateShape(blockInfo.BlockState.Shape);
+                blockSelectionBox.UpdateShape(blockInfo.BlockState.Shape, false);
+                
+                // Clear predicted mesh
+                blockSelectionBox.ClearPredictedMesh();
             }
             else
             {
@@ -173,6 +177,7 @@ namespace CraftSharp.Control
                 if (blockSelectionBox)
                 {
                     blockSelectionBox.ClearShape();
+                    blockSelectionBox.ClearPredictedMesh();
                 }
             }
             
@@ -412,23 +417,26 @@ namespace CraftSharp.Control
             var (predictedStateId, predictedBlockState) = palette.GetBlockStateWithProperties(blockId, predicateProps);
             Debug.Log($"Predicted block state: {predictedBlockState}");
 
-            // Doesn't seem to work very well
-            //EventManager.Instance.Broadcast(new BlockPredictionEvent(newBlockLoc, predictedStateId));
-
             TargetBlockLoc = newBlockLoc;
                 
             blockSelectionBox.transform.position = CoordConvert.MC2Unity(client.WorldOriginOffset, newBlockLoc.ToLocation());
-            blockSelectionBox.UpdateShape(predictedBlockState.Shape);
+            blockSelectionBox.UpdateShape(predictedBlockState.Shape, true);
 
             var offsetType = ResourcePackManager.Instance.StateModelTable[predictedStateId].OffsetType;
-            if (ChunkRenderBuilder.OffsetTypeAffectsAABB(offsetType))
+            var posOffset = ChunkRenderBuilder.GetBlockOffsetInBlock(offsetType,
+                newBlockLoc.X >> 4, newBlockLoc.Z >> 4, newBlockLoc.X & 0xF, newBlockLoc.Z & 0xF);
+
+            var applyOffsetOnBox = ChunkRenderBuilder.OffsetTypeAffectsAABB(offsetType);
+            if (applyOffsetOnBox)
             {
-                var locationOffset = ChunkRenderBuilder.GetBlockOffsetInBlock(offsetType,
-                    newBlockLoc.X >> 4, newBlockLoc.Z >> 4,
-                    newBlockLoc.X & 0xF, newBlockLoc.Z & 0xF);
-                        
-                blockSelectionBox.transform.position += (Vector3) locationOffset;
+                blockSelectionBox.transform.position += (Vector3) posOffset;
             }
+            
+            var geometryVariant = (newBlockLoc.X  & 0xF) + (newBlockLoc.Y & 0xF) + (newBlockLoc.Z & 0xF) + 3;
+
+            var colorInt = client.ChunkRenderManager.GetBlockColor(predictedStateId, newBlockLoc);
+            blockSelectionBox.UpdatePredictedMesh(predictedBlockState, applyOffsetOnBox ? float3.zero : posOffset, 0b111111, 
+                colorInt, client.ChunkRenderManager.GetBlockLight(newBlockLoc), geometryVariant, rt => client.ChunkMaterialManager.GetAtlasMaterial(rt));
 
             EventManager.Instance.Broadcast(new TargetBlockLocUpdateEvent(newBlockLoc));
         }

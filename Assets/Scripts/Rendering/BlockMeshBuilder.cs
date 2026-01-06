@@ -7,6 +7,7 @@ using UnityEngine.Rendering;
 
 using CraftSharp;
 using CraftSharp.Resource;
+using Object = UnityEngine.Object;
 
 namespace CraftSharp.Rendering
 {
@@ -14,9 +15,8 @@ namespace CraftSharp.Rendering
     {
         private static readonly Mesh EMPTY_BLOCK_MESH = new();
         
-        private static readonly float[] FULL_CORNER_LIGHTS = { 1F, 1F, 1F, 1F, 1F, 1F, 1F, 1F };
-        private static readonly float[] DUMMY_BLOCK_VERT_LIGHT = Enumerable.Repeat(0F, 8).ToArray();
-        private static readonly byte[] FLUID_HEIGHTS = { 15, 15, 15, 15, 15, 15, 15, 15, 15 };
+        private static readonly float[] FULL_CORNER_LIGHTS = Enumerable.Repeat(1F, 8).ToArray();
+        private static readonly byte[] FLUID_HEIGHTS = Enumerable.Repeat((byte) 15, 9).ToArray();
         
         private static void ClearBlockVisual(GameObject modelObject)
         {
@@ -57,12 +57,12 @@ namespace CraftSharp.Rendering
             if (!client) return;
             
             var packManager = ResourcePackManager.Instance;
-            packManager.StateModelTable.TryGetValue(stateId, out BlockStateModel? stateModel);
+            packManager.StateModelTable.TryGetValue(stateId, out var stateModel);
             if (stateModel is null) return;
             
             var blockGeometry = stateModel.Geometries[0];
 
-            if (BlockEntityTypePalette.INSTANCE.GetBlockEntityForBlock(blockId, out BlockEntityType blockEntityType)) // Use embedded entity render
+            if (BlockEntityTypePalette.INSTANCE.GetBlockEntityForBlock(blockId, out var blockEntityType)) // Use embedded entity render
             {
                 client.ChunkRenderManager.CreateBlockEntityRenderForItemModel(modelObject.transform, blockState, blockEntityType);
             }
@@ -71,7 +71,7 @@ namespace CraftSharp.Rendering
             var waterColor = world.GetWaterColor(BlockLoc.Zero);
             
             // Use regular mesh
-            var mesh = BuildBlockMesh(blockState, blockGeometry, 0b111111, color, waterColor);
+            var mesh = BuildBlockMesh_Internal(blockState, blockGeometry, float3.zero, 0b111111, color, waterColor, 0, true);
             
             meshFilter.sharedMesh = mesh;
             meshRenderer.sharedMaterial = client.ChunkMaterialManager.GetAtlasMaterial(stateModel.RenderType);
@@ -88,12 +88,34 @@ namespace CraftSharp.Rendering
             }
         }
 
-        private static Mesh BuildBlockMesh(BlockState state, BlockGeometry geometry, int cullFlags, int colorInt, int waterColorInt)
+        /// <summary>
+        /// Build block mesh.
+        /// </summary>
+        public static (Mesh, RenderType) BuildBlockMesh(BlockState blockState, float3 posOffset, int cullFlags, int colorInt, byte blockLight, int variant, int waterColorInt, bool includeLiquidMesh)
         {
-            int vertexCount = geometry.GetVertexCount(cullFlags);
-            int fluidVertexCount = 0;
+            var packManager = ResourcePackManager.Instance;
+            var stateId = BlockStatePalette.INSTANCE.GetNumIdByObject(blockState);
 
-            if (state.InWater || state.InLava)
+            packManager.StateModelTable.TryGetValue(stateId, out var stateModel);
+
+            if (stateModel is null) return (EMPTY_BLOCK_MESH, RenderType.SOLID);
+
+            // Get and build chosen variant
+            var models = stateModel.Geometries;
+            var chosen = variant % models.Length;
+            var blockGeometry = models[chosen];
+
+            var mesh = BuildBlockMesh_Internal(blockState, blockGeometry, posOffset, cullFlags, colorInt, waterColorInt, blockLight, includeLiquidMesh);
+
+            return (mesh, stateModel.RenderType);
+        }
+        
+        private static Mesh BuildBlockMesh_Internal(BlockState state, BlockGeometry geometry, float3 posOffset, int cullFlags, int colorInt, int waterColorInt, byte blockLight, bool includeLiquidMesh)
+        {
+            var vertexCount = geometry.GetVertexCount(cullFlags);
+            var fluidVertexCount = 0;
+
+            if (includeLiquidMesh && state.InLiquid)
             {
                 fluidVertexCount = FluidGeometry.GetVertexCount(cullFlags);
                 vertexCount += fluidVertexCount;
@@ -103,21 +125,25 @@ namespace CraftSharp.Rendering
             var visualBuffer = new VertexBuffer(vertexCount);
 
             uint vertexOffset = 0;
+            var blockVertLight = Enumerable.Repeat((float) blockLight, 8).ToArray();
 
-            if (state.InWater)
+            if (includeLiquidMesh)
             {
-                var waterColor = ColorConvert.GetFloat3(waterColorInt);
-                FluidGeometry.Build(visualBuffer, ref vertexOffset, float3.zero, FluidGeometry.LiquidTextures[0], FLUID_HEIGHTS,
-                        cullFlags, DUMMY_BLOCK_VERT_LIGHT, waterColor);
+                if (state.InWater)
+                {
+                    var waterColor = ColorConvert.GetFloat3(waterColorInt);
+                    FluidGeometry.Build(visualBuffer, ref vertexOffset, float3.zero, FluidGeometry.LiquidTextures[0], FLUID_HEIGHTS,
+                        cullFlags, blockVertLight, waterColor);
+                }
+                else if (state.InLava)
+                    FluidGeometry.Build(visualBuffer, ref vertexOffset, float3.zero, FluidGeometry.LiquidTextures[1], FLUID_HEIGHTS,
+                        cullFlags, blockVertLight, BlockGeometry.DEFAULT_COLOR);
             }
-            else if (state.InLava)
-                FluidGeometry.Build(visualBuffer, ref vertexOffset, float3.zero, FluidGeometry.LiquidTextures[1], FLUID_HEIGHTS,
-                        cullFlags, DUMMY_BLOCK_VERT_LIGHT, BlockGeometry.DEFAULT_COLOR);
 
             var blockColor = ColorConvert.GetFloat3(colorInt);
-            geometry.Build(visualBuffer, ref vertexOffset, float3.zero, cullFlags, 0, 0F, DUMMY_BLOCK_VERT_LIGHT, blockColor);
+            geometry.Build(visualBuffer, ref vertexOffset, posOffset, cullFlags, 0, 0F, blockVertLight, blockColor);
 
-            int triIdxCount = vertexCount / 2 * 3;
+            var triIdxCount = vertexCount / 2 * 3;
 
             var meshDataArr = Mesh.AllocateWritableMeshData(1);
             var meshData = meshDataArr[0];
@@ -150,7 +176,7 @@ namespace CraftSharp.Rendering
 
             // Set face data
             var triIndices = meshData.GetIndexData<uint>();
-            uint vi = 0; int ti = 0;
+            uint vi = 0; var ti = 0;
             for (; vi < vertexCount; vi += 4U, ti += 6)
             {
                 triIndices[ti]     = vi;
@@ -163,9 +189,9 @@ namespace CraftSharp.Rendering
 
             var bounds = new Bounds(new Vector3(0.5F, 0.5F, 0.5F), new Vector3(1F, 1F, 1F));
 
-            if (state.InWater || state.InLava)
+            if (includeLiquidMesh && state.InLiquid)
             {
-                int fluidTriIdxCount = fluidVertexCount / 2 * 3;
+                var fluidTriIdxCount = fluidVertexCount / 2 * 3;
 
                 meshData.subMeshCount = 2;
                 meshData.SetSubMesh(0, new SubMeshDescriptor(0, fluidTriIdxCount)
@@ -206,7 +232,7 @@ namespace CraftSharp.Rendering
             var packManager = ResourcePackManager.Instance;
             var stateId = BlockStatePalette.INSTANCE.GetNumIdByObject(blockState);
 
-            packManager.StateModelTable.TryGetValue(stateId, out BlockStateModel? stateModel);
+            packManager.StateModelTable.TryGetValue(stateId, out var stateModel);
 
             if (stateModel is null) return EMPTY_BLOCK_MESH;
 
@@ -223,13 +249,13 @@ namespace CraftSharp.Rendering
         /// </summary>
         private static Mesh BuildBlockBreakMesh_Internal(BlockGeometry blockGeometry, float3 posOffset, int cullFlags)
         {
-            int vertexCount = blockGeometry.GetVertexCount(cullFlags);
+            var vertexCount = blockGeometry.GetVertexCount(cullFlags);
             var visualBuffer = new VertexBuffer(vertexCount);
             uint vertexOffset = 0;
             blockGeometry.Build(visualBuffer, ref vertexOffset, posOffset, cullFlags, 0, 0F, FULL_CORNER_LIGHTS,
                 float3.zero, BlockGeometry.VertexDataFormat.ExtraUV_Light);
 
-            int triIdxCount = vertexCount / 2 * 3;
+            var triIdxCount = vertexCount / 2 * 3;
 
             var meshDataArr = Mesh.AllocateWritableMeshData(1);
             var meshData = meshDataArr[0];
@@ -258,7 +284,7 @@ namespace CraftSharp.Rendering
 
             // Set face data
             var triIndices = meshData.GetIndexData<uint>();
-            uint vi = 0; int ti = 0;
+            uint vi = 0; var ti = 0;
             for (;vi < vertexCount;vi += 4U, ti += 6)
             {
                 triIndices[ti]     = vi;

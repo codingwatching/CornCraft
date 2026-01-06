@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using CraftSharp.Rendering;
 using CraftSharp.Resource;
@@ -10,6 +11,7 @@ namespace CraftSharp.Control
     {
         private static readonly int DESTROY_STAGE = Shader.PropertyToID("_DestroyStage");
         private static readonly int DESTROY_TEXTURE_ARRAY = Shader.PropertyToID("_DestroyTextureArray");
+        private static readonly int LINE_COLOR = Shader.PropertyToID("_Line_Color");
         private static readonly int LINE_LENGTH = Shader.PropertyToID("_Line_Length");
         private static readonly int BILLBOARD_AXIS = Shader.PropertyToID("_BillboardAxis");
         private const int MAX_AABB_COUNT = 64;
@@ -18,6 +20,8 @@ namespace CraftSharp.Control
         [SerializeField] private Mesh lineMesh;
         [SerializeField] private MeshFilter breakMeshFilter;
         [SerializeField] private MeshRenderer breakMeshRenderer;
+        [SerializeField] private MeshFilter predictedMeshFilter;
+        [SerializeField] private MeshRenderer predictedMeshRenderer;
 
         private readonly MeshRenderer[] lineMeshRenderers = new MeshRenderer[MAX_AABB_COUNT * 12];
         private static Texture2DArray destroyTextureArray;
@@ -26,14 +30,18 @@ namespace CraftSharp.Control
         private BlockShape? currentBlockShape;
         private BlockState? currentBlockState;
         private Mesh? currentBreakMesh;
+        private BlockState? predictedBlockState;
+        private Mesh? predictedBlockMesh;
 #nullable disable
+        private bool wasPredicted = false;
         private int currentBoxCount = 0;
         private int createdBoxCount = 0;
         private int currentDestroyStage = -1;
 
-        private static MaterialPropertyBlock GetLengthPropertyBlock(int axis, float length)
+        private static MaterialPropertyBlock GetLengthPropertyBlock(int axis, float length, Color color)
         {
             var propBlock = new MaterialPropertyBlock();
+            propBlock.SetColor(LINE_COLOR, color);
             propBlock.SetFloat(LINE_LENGTH, length);
             propBlock.SetInteger(BILLBOARD_AXIS, axis);
 
@@ -59,15 +67,17 @@ namespace CraftSharp.Control
             return propBlock;
         }
 
-        public void UpdateShape(BlockShape blockShape)
+        public void UpdateShape(BlockShape blockShape, bool predicted)
         {
-            if (currentBlockShape == blockShape) return;
+            if (currentBlockShape == blockShape && wasPredicted == predicted) return;
             currentBlockShape = blockShape;
+            wasPredicted = predicted;
 
+            var lineColor = predicted ? Color.cyan : Color.white;
             var aabbs = blockShape.AABBs.ToArray();
             var displayedBoxCount = Mathf.Min(aabbs.Length, MAX_AABB_COUNT);
 
-            int i = 0;
+            var i = 0;
 
             for (; i < displayedBoxCount; i++)
             {
@@ -97,9 +107,9 @@ namespace CraftSharp.Control
                 var halfX = (minX + maxX) / 2F;
                 var halfY = (minY + maxY) / 2F;
                 var halfZ = (minZ + maxZ) / 2F;
-                var propX = GetLengthPropertyBlock(0, maxX - minX);
-                var propY = GetLengthPropertyBlock(1, maxY - minY);
-                var propZ = GetLengthPropertyBlock(2, maxZ - minZ);
+                var propX = GetLengthPropertyBlock(0, maxX - minX, lineColor);
+                var propY = GetLengthPropertyBlock(1, maxY - minY, lineColor);
+                var propZ = GetLengthPropertyBlock(2, maxZ - minZ, lineColor);
 
                 lineMeshRenderers[i * 12     ].SetPropertyBlock(propX);
                 lineMeshRenderers[i * 12 + 1 ].SetPropertyBlock(propX);
@@ -147,6 +157,28 @@ namespace CraftSharp.Control
 
             currentBoxCount = aabbs.Length;
         }
+        
+        public void UpdatePredictedMesh(BlockState blockState, float3 posOffset, int cullFlags, int colorInt,
+            byte blockLight, int geometryVariant, Func<RenderType, Material> materialGetter)
+        {
+            if (predictedBlockState == blockState) return;
+            predictedBlockState = blockState;
+
+            if (predictedBlockMesh) // Take care of previous break mesh
+            {
+                predictedMeshFilter.sharedMesh = null;
+                Destroy(predictedBlockMesh);
+            }
+
+            if (predictedBlockState is not null)
+            {
+                var (predictedMesh, predictedRenderType) = BlockMeshBuilder.BuildBlockMesh(predictedBlockState,
+                    posOffset, cullFlags, colorInt, blockLight, geometryVariant, 0, false);
+                predictedBlockMesh = predictedMesh;
+                predictedMeshFilter.sharedMesh = predictedBlockMesh;
+                predictedMeshRenderer.sharedMaterial = materialGetter(predictedRenderType);
+            }
+        }
 
         public void UpdateBreakMesh(BlockState blockState, float3 posOffset, int cullFlags, int stage)
         {
@@ -159,7 +191,7 @@ namespace CraftSharp.Control
                 Destroy(currentBreakMesh);
             }
 
-            if (blockState is not null)
+            if (currentBlockState is not null)
             {
                 currentBreakMesh = BlockMeshBuilder.BuildBlockBreakMesh(currentBlockState, posOffset, cullFlags);
                 breakMeshFilter.sharedMesh = currentBreakMesh;
@@ -190,6 +222,17 @@ namespace CraftSharp.Control
             currentBoxCount = 0;
         }
     
+        public void ClearPredictedMesh()
+        {
+            predictedBlockState = null;
+
+            if (predictedBlockMesh) // Take care of previous predicted mesh
+            {
+                predictedMeshFilter.sharedMesh = null;
+                Destroy(predictedBlockMesh);
+            }
+        }
+        
         public void ClearBreakMesh()
         {
             currentBlockState = null;
