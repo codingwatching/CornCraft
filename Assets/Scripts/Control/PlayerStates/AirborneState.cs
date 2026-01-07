@@ -74,13 +74,13 @@ namespace CraftSharp.Control
                     var targetMoveVelocity = player.GetMovementOrientation() * Vector3.forward * ability.GlideSpeed;
                     var currentHorizontalVelocity = currentVelocity;
                     currentHorizontalVelocity.y = 0F;
-                    moveVelocity = Vector3.Lerp(currentHorizontalVelocity, targetMoveVelocity, 0.25F);
+                    moveVelocity = Vector3.Lerp(currentHorizontalVelocity, targetMoveVelocity, 0.3F);
                 }
                 else // No horizontal movement, smoothly brake
                 {
                     var currentHorizontalVelocity = currentVelocity;
                     currentHorizontalVelocity.y = 0F;
-                    moveVelocity = Vector3.Lerp(currentHorizontalVelocity, Vector3.zero, 0.15F);
+                    moveVelocity = Vector3.Lerp(currentHorizontalVelocity, Vector3.zero, 0.2F);
                 }
 
                 if (info.Flying)
@@ -92,7 +92,7 @@ namespace CraftSharp.Control
                     else if (inputData.Locomotion.Descend.IsPressed())
                         targetVerticalVelocity = -ability.SneakSpeed * 3F;
 
-                    moveVelocity.y = Mathf.Lerp(currentVelocity.y, targetVerticalVelocity, 0.25F);
+                    moveVelocity.y = Mathf.Lerp(currentVelocity.y, targetVerticalVelocity, 0.3F);
 
                     // Flying doesn't have any gravity, which can prevent proper ground-check
                     // So here we stop flying when getting close enough to the ground
@@ -104,13 +104,13 @@ namespace CraftSharp.Control
                 else
                 {
                     // Apply gravity when gliding and not flying (Not additive when gliding)
-                    moveVelocity += info.GravityScale * 3F * interval * Physics.gravity;
+                    moveVelocity += info.GravityScale * 2F * interval * Physics.gravity;
                 }
             }
             else // Falling
             {
                 // Apply gravity
-                moveVelocity = currentVelocity + Physics.gravity * (info.GravityScale * 3F * interval);
+                moveVelocity = currentVelocity + info.GravityScale * 2F * interval * Physics.gravity;
                 
                 // Speed limit check
                 if (moveVelocity.magnitude > ability.MaxFallSpeed)

@@ -31,7 +31,7 @@ namespace CraftSharp
 
         #region Players and Entities
         private bool locationReceived = false;
-        private readonly EntitySpawnData _clientEntitySpawn = new(0, EntityType.DUMMY_ENTITY_TYPE, Location.Zero);
+        private readonly EntitySpawnData _clientEntitySpawn = new(CLIENT_ENTITY_ID_INTERNAL, EntityType.DUMMY_ENTITY_TYPE, Location.Zero);
         private readonly Dictionary<int, InventoryData> inventories = new();
         private readonly Dictionary<Guid, PlayerInfo> onlinePlayers = new();
         
@@ -115,6 +115,9 @@ namespace CraftSharp
             // Update client entity name
             _clientEntitySpawn.Name = session.PlayerName;
             _clientEntitySpawn.UUID = LOCAL_UUID;
+            
+            // Assign Entity render manager
+            PlayerController.SetEntityRenderManager(EntityRenderManager);
 
             // Create player render
             SwitchToFirstPlayerRender(_clientEntitySpawn);

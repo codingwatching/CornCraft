@@ -12,13 +12,6 @@ namespace CraftSharp.Control
     [RequireComponent(typeof (PlayerStatusUpdater))]
     public class PlayerController : MonoBehaviour
     {
-        public enum CurrentItemState
-        {
-            HoldInMainHand,
-            HoldInOffhand,
-            Mount
-        }
-
         // Player Config Fields
         [SerializeField] private PlayerAbilityConfig m_AbilityConfig;
 
@@ -30,11 +23,10 @@ namespace CraftSharp.Control
 
         // Camera & Player Render Fields
         private CameraController m_CameraController;
+        private EntityRenderManager m_EntityRenderManager;
         private Transform m_FollowRef;
         private Transform m_AimingRef;
         private EntityRender m_PlayerRender;
-        [SerializeField] private Vector3 m_InitialUpward = Vector3.up;
-        [SerializeField] private Vector3 m_InitialForward = Vector3.forward;
 
         // Input System Fields & Methods
         public PlayerActions Actions { get; private set; }
@@ -80,22 +72,6 @@ namespace CraftSharp.Control
 
         public void SwitchPlayerRenderFromPrefab(EntitySpawnData entitySpawn, GameObject renderPrefab)
         {
-            var renderObj = Instantiate(renderPrefab);
-            renderObj.name = $"Player Entity ({renderPrefab.name})";
-
-            // Switch to player render created with given prefab
-            SwitchPlayerRender(entitySpawn, renderObj);
-        }
-
-#nullable enable
-        public void UpdateMetadataForPlayerRender(EntitySpawnData entitySpawn, Dictionary<int, object?> metadata)
-        {
-            m_PlayerRender.UpdateMetadata(metadata);
-        }
-#nullable disable
-
-        private void SwitchPlayerRender(EntitySpawnData entitySpawn, GameObject renderObj)
-        {
             var prevRender = m_PlayerRender;
 
             if (prevRender)
@@ -103,61 +79,16 @@ namespace CraftSharp.Control
                 // Unregister previous aiming mode change handler
                 EventManager.Instance.Unregister<CameraAimingEvent>(prevRender.HandleAimingModeChange);
             }
-
-            // Clear existing event subscriptions
-            OnPlayerUpdate = null;
             
             // Update controller's player render
-            if (renderObj.TryGetComponent(out m_PlayerRender))
+            if (m_EntityRenderManager)
             {
-                // Initialize head yaw to look forward
-                if (m_PlayerRender is LivingEntityRender livingEntityRender)
-                    livingEntityRender.HeadYaw.Value = EntitySpawnData.GetHeadYawFromByte(127); // i.e. -90F
-                m_PlayerRender.UUID = entitySpawn.UUID;
-                m_PlayerRender.transform.SetParent(transform, false);
-
-                // Initialize player entity render (originOffset not used here)
-                m_PlayerRender.Initialize(entitySpawn, Vector3Int.zero);
-
-                // Set client entity flag to implement special handling
+                m_PlayerRender = m_EntityRenderManager.AddEntityRenderFromGivenPrefab(entitySpawn, renderPrefab);
                 m_PlayerRender.SetClientEntityFlag();
-                
-                // Update entity data from previous player render
-                if (prevRender && prevRender.Metadata is not null)
-                {
-                    m_PlayerRender.UpdateMetadata(prevRender.Metadata);
-                }
 
-                // Update render gameobject layer (do this last to ensure all children are present)
-                foreach (var child in renderObj.GetComponentsInChildren<Transform>())
-                {
-                    child.gameObject.layer = gameObject.layer;
-                }
-
-                OnPlayerUpdate += (velocity, interval, _) =>
-                {
-                    // Update player render velocity
-                    m_PlayerRender.SetVisualMovementVelocity(velocity);
-                    
-                    // Check on fire flag and update billboard
-                    if (m_CameraController && m_CameraController.RenderCamera)
-                    {
-                        var onFire = (m_PlayerRender.SharedFlags.Value & 0x01) != 0;
-                        m_PlayerRender.UpdateFireBillboard(onFire, m_CameraController.RenderCamera.transform);
-                    }
-                    
-                    // Update death animation(because UpdateTransform is not called for player render)
-                    m_PlayerRender.UpdateDeath();
-                    
-                    // Update render
-                    m_PlayerRender.UpdateAnimation(0.05F);
-                };
-                
                 // Setup camera ref and use it
                 m_FollowRef = m_PlayerRender.SetupCameraRef();
                 m_AimingRef = m_PlayerRender.GetAimingRef();
-                // Reset player render local position
-                m_PlayerRender.transform.localPosition = Vector3.zero;
                 
                 // Initialize aiming mode state
                 if (m_CameraController)
@@ -187,9 +118,14 @@ namespace CraftSharp.Control
             {
                 m_CameraController.SetTargets(m_FollowRef, m_AimingRef);
             }
-            
+
             // Re-initialize current state
             ChangeToState(CurrentState);
+        }
+
+        public void SetEntityRenderManager(EntityRenderManager entityRenderManager)
+        {
+            m_EntityRenderManager = entityRenderManager;
         }
 
         public void HandleCameraControllerSwitch(CameraController cameraController)
@@ -198,7 +134,6 @@ namespace CraftSharp.Control
 
             if (m_FollowRef && m_AimingRef)
             {
-                cameraController.transform.rotation = Quaternion.LookRotation(m_InitialForward, m_InitialUpward);
                 m_CameraController.SetTargets(m_FollowRef, m_AimingRef);
             }
             else
@@ -212,28 +147,12 @@ namespace CraftSharp.Control
         private Action<GameModeUpdateEvent>? gameModeCallback;
         private Action<HealthUpdateEvent>? healthCallback;
 
-        public delegate void ItemStateEventHandler(CurrentItemState weaponState);
-
-        public event ItemStateEventHandler? OnItemStateChanged;
-        
-        public void ChangeItemState(CurrentItemState itemState)
-        {
-            OnItemStateChanged?.Invoke(itemState);
-        }
-
         public delegate void ItemStackEventHandler(ItemStack? item, ItemActionType actionType);
         public event ItemStackEventHandler? OnCurrentItemChanged;
         public void ChangeCurrentItem(ItemStack? currentItem, ItemActionType actionType)
         {
             OnCurrentItemChanged?.Invoke(currentItem, actionType);
         }
-
-        public event Action? OnRandomizeMirroredFlag;
-        public void RandomizeMirroredFlag() => OnRandomizeMirroredFlag?.Invoke();
-
-        // Used only by player renders, will be cleared and reassigned upon player render update
-        private delegate void PlayerUpdateEventHandler(Vector3 velocity, float interval, PlayerStatus status);
-        private event PlayerUpdateEventHandler? OnPlayerUpdate;
         
         // Used by client to send EntityAction packets
         public delegate void PlayerActionEventHandler(EntityActionType actionType);
@@ -445,10 +364,9 @@ namespace CraftSharp.Control
 
         public Quaternion GetMovementOrientation()
         {
-            var upward = m_InitialUpward;
-            var forward = Quaternion.AngleAxis(Status.MovementInputYaw, upward) * m_InitialForward;
+            var forward = Quaternion.AngleAxis(Status.MovementInputYaw, Vector3.up) * Vector3.forward;
 
-            return Quaternion.LookRotation(forward, upward);
+            return Quaternion.LookRotation(forward, Vector3.up);
         }
 
         public void BeforeCharacterUpdate(UnityAABB[] terrainAABBs, UnityAABB[] liquidAABBs)
@@ -505,12 +423,6 @@ namespace CraftSharp.Control
             
             // Update player physics and transform using updated current state
             CurrentState.UpdateMain(ref currentVelocity, deltaTime, Actions!, status, this);
-            
-            // Update player rotation (yaw)
-            if (m_PlayerRender)
-            {
-                m_PlayerRender.VisualTransform.eulerAngles = new Vector3(0F, status.CurrentVisualYaw, 0F);
-            }
 
             if (status.PhysicsDisabled)
             {
@@ -528,32 +440,32 @@ namespace CraftSharp.Control
                 m_StatusUpdater.UpdatePlayerPosition(ref currentVelocity, deltaTime, Status.Sneaking, aabbs, dimensions.x, dimensions.y);
             }
 
-            // ReSharper disable once CompareOfFloatsByEqualityOperator
-            if (prevStamina != status.StaminaLeft) // Broadcast current stamina if changed
+            if (!Mathf.Approximately(prevStamina, status.StaminaLeft)) // Broadcast current stamina if changed
             {
                 EventManager.Instance.Broadcast(new StaminaUpdateEvent(status.StaminaLeft, m_AbilityConfig.MaxStamina));
             }
-
-            // Visual updates... Don't pass the velocity by ref here, just the value
-            var visualVelocity = currentVelocity;
-            OnPlayerUpdate?.Invoke(visualVelocity, deltaTime, Status);
         }
 
         public void AfterCharacterUpdate()
         {
             var newLocation = CoordConvert.Unity2MC(_worldOriginOffset, transform.position);
+            var newYaw = Status.CurrentVisualYaw;
 
             // Update values to send to server
             Location2Send = newLocation;
-
-            if (m_PlayerRender)
-            {
-                // Update client player data
-                MCYaw2Send = Status.CurrentVisualYaw - 90F; // Coordinate system conversion
-                Pitch2Send = 0F;
-            }
-            
+            MCYaw2Send = newYaw - 90F; // Coordinate system conversion
+            Pitch2Send = 0F;
             IsGrounded2Send = Status.Grounded;
+
+            if (m_EntityRenderManager)
+            {
+                const int entityId = BaseCornClient.CLIENT_ENTITY_ID_INTERNAL;
+                
+                // Update client player data
+                m_EntityRenderManager.TeleportEntityRender(entityId, newLocation);
+                m_EntityRenderManager.RotateEntityRender(entityId, newYaw, 0F);
+                m_EntityRenderManager.RotateEntityRenderHead(entityId, newYaw);
+            }
         }
 
         private Vector3Int _worldOriginOffset = Vector3Int.zero;
@@ -589,7 +501,14 @@ namespace CraftSharp.Control
 
             // Update current location and yaw
             transform.position = CoordConvert.MC2Unity(_worldOriginOffset, loc);
-            m_PlayerRender.Yaw.Value = newUnityYaw;
+
+            if (m_EntityRenderManager)
+            {
+                const int entityId = BaseCornClient.CLIENT_ENTITY_ID_INTERNAL;
+                
+                m_EntityRenderManager.TeleportEntityRender(entityId, loc);
+                m_EntityRenderManager.RotateEntityRender(entityId, newUnityYaw, 0F);
+            }
 
             // Update local data
             Location2Send = loc;

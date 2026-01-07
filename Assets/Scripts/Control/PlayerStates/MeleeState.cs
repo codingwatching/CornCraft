@@ -71,8 +71,6 @@ namespace CraftSharp.Control
 
             var attackStatus = info.AttackStatus;
             attackStatus.AttackCooldown = 0F;
-
-            player.ChangeItemState(PlayerController.CurrentItemState.Mount);
         }
 
         public override string ToString() => "Melee";

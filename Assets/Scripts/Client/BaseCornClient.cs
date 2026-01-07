@@ -15,6 +15,8 @@ namespace CraftSharp
     [RequireComponent(typeof (InteractionUpdater))]
     public abstract class BaseCornClient : MonoBehaviour
     {
+        public const int CLIENT_ENTITY_ID_INTERNAL = -1;
+        
         #region Inspector Fields
         // World Fields
         [SerializeField] private Transform m_WorldAnchor;

@@ -78,7 +78,7 @@ namespace CraftSharp
 
         #region Players and Entities
         private bool locationReceived = false;
-        private readonly EntitySpawnData _clientEntitySpawn = new(0, EntityType.DUMMY_ENTITY_TYPE, Location.Zero);
+        private readonly EntitySpawnData _clientEntitySpawn = new(CLIENT_ENTITY_ID_INTERNAL, EntityType.DUMMY_ENTITY_TYPE, Location.Zero);
         private float maximumHealth = -0F;
         private float currentHealth = -0F;
         public override float CurrentHealth => currentHealth;
@@ -196,6 +196,9 @@ namespace CraftSharp
                     _clientEntitySpawn.UUID = uuid;
                     Debug.Log($"Client uuid: {uuid}");
                     maximumHealth = 20F;
+                    
+                    // Assign Entity render manager
+                    PlayerController.SetEntityRenderManager(EntityRenderManager);
 
                     // Create player render
                     SwitchToFirstPlayerRender(_clientEntitySpawn);
@@ -2182,7 +2185,7 @@ namespace CraftSharp
         public void OnReceivePlayerEntityId(int entityId)
         {
             _clientEntitySpawn.Id = entityId;
-            //Debug.Log($"Player entity Id received: {entityId}");
+            Debug.Log($"Player entity Id received: {entityId}");
         }
 
         /// <summary>
@@ -2624,16 +2627,17 @@ namespace CraftSharp
         {
             Loom.QueueOnMainThread(() =>
             {
+                // If updating client entity's metadata, map this to our internal entity id
+                if (entityId == _clientEntitySpawn.Id)
+                {
+                    entityId = CLIENT_ENTITY_ID_INTERNAL;
+                }
+                
                 var entity = EntityRenderManager.GetEntityRender(entityId);
 
                 if (entity)
                 {
                     entity.UpdateMetadata(metadata);
-                }
-
-                if (entityId == _clientEntitySpawn.Id)
-                {
-                    PlayerController.UpdateMetadataForPlayerRender(_clientEntitySpawn, metadata);
                 }
             });
         }

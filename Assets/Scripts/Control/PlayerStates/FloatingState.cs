@@ -30,14 +30,7 @@ namespace CraftSharp.Control
             Vector3 moveVelocity = Vector3.zero;
 
             // Update moving status
-            var prevMoving = info.Moving;
             info.Moving = inputData.Locomotion.Movement.IsPressed();
-
-            // Animation mirror randomization
-            if (info.Moving != prevMoving)
-            {
-                player.RandomizeMirroredFlag();
-            }
 
             // Check vertical movement...
             var distToAfloat = PlayerStatusUpdater.ABOVE_LIQUID_HEIGHT_WHEN_FLOATING - info.LiquidDistFromHead;
@@ -68,17 +61,17 @@ namespace CraftSharp.Control
                 var targetMoveVelocity = player.GetMovementOrientation() * Vector3.forward * (info.Flying ? flightSpeed : swimSpeed);
                 var currentHorizontalVelocity = currentVelocity;
                 currentHorizontalVelocity.y = 0F;
-                moveVelocity += Vector3.Lerp(currentHorizontalVelocity, targetMoveVelocity, 0.2F);
+                moveVelocity += Vector3.Lerp(currentHorizontalVelocity, targetMoveVelocity, 0.3F);
             }
             else // No horizontal input, smoothly brake
             {
                 var currentHorizontalVelocity = currentVelocity;
                 currentHorizontalVelocity.y = 0F;
-                moveVelocity += Vector3.Lerp(currentHorizontalVelocity, Vector3.zero, 0.2F);
+                moveVelocity += Vector3.Lerp(currentHorizontalVelocity, Vector3.zero, 0.3F);
             }
 
             // Smooth vertical movement while floating/flying
-            moveVelocity.y = Mathf.Lerp(currentVelocity.y, targetVerticalVelocity, 0.2F);
+            moveVelocity.y = Mathf.Lerp(currentVelocity.y, targetVerticalVelocity, 0.3F);
 
             // Apply gravity (nonexistent)
 

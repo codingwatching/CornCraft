@@ -13,7 +13,7 @@ namespace CraftSharp.Control
         private const float MAX_STEP_HEIGHT = 0.125F;
         private const float HIGH_STEP_MAX_HEIGHT = 1.125F;
         private const float HIGH_STEP_MAX_HEIGHT_SNEAKING = 0.5F;
-        private const float HIGH_STEP_LIFT_AMOUNT = 0.125F;
+        private const float HIGH_STEP_LIFT_AMOUNT = 0.25F;
         private const float FORWARD_STEP_DOT_THRESHOLD = 0.5F;
         private const float STEP_FORWARD_CHECK_OFFSET = 0.125F;
         private const float SNEAK_FALL_PREVENTION_THRESHOLD = 0.6F;

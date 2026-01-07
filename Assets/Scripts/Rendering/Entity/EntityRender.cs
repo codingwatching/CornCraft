@@ -123,7 +123,7 @@ namespace CraftSharp.Rendering
         /// </summary>
         public readonly TrackedValue<EntityPose> Pose = new(EntityPose.Standing);
 
-        protected bool isClientEntity { get; private set; } = false;
+        public bool IsClientEntity { get; private set; } = false;
 
         /// <summary>
         /// Update entity metadata, validate control variables,
@@ -177,7 +177,7 @@ namespace CraftSharp.Rendering
             }
 
             // Update entity pose (Only update for non-client entities)
-            if (!isClientEntity && Type.MetaSlotByName.TryGetValue("data_pose", out var metaSlot4)
+            if (!IsClientEntity && Type.MetaSlotByName.TryGetValue("data_pose", out var metaSlot4)
                 && Type.MetaEntries[metaSlot4].DataType == EntityMetadataType.Pose)
             {
                 if (Metadata.TryGetValue(metaSlot4, out var value) && value is int pose)
@@ -254,7 +254,9 @@ namespace CraftSharp.Rendering
 
         public void SetClientEntityFlag()
         {
-            isClientEntity = true;
+            IsClientEntity = true;
+
+            movementUpdateInterval = 50D;
         }
 
         /// <summary>

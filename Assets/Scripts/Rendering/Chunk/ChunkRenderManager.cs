@@ -1208,7 +1208,7 @@ namespace CraftSharp.Rendering
                 EventManager.Instance.Unregister(blockPredictionCallback);
         }
 
-        private void FixedUpdate()
+        private void Update()
         {
             // Don't build world until biomes are received and registered
             if (!World.BiomesInitialized || !client) return;
@@ -1293,10 +1293,7 @@ namespace CraftSharp.Rendering
                 UpdateChunkRendersListRemove();
                 Profiler.EndSample();
             }
-        }
-
-        private void Update()
-        {
+            
             if (!client) // Game is not ready, cancel update
                 return;
 

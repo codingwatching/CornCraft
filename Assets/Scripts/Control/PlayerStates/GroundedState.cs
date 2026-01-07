@@ -60,14 +60,7 @@ namespace CraftSharp.Control
             else // Stay on ground
             {
                 // Update moving status
-                bool prevMoving = info.Moving;
                 info.Moving = inputData.Locomotion.Movement.IsPressed();
-
-                // Animation mirror randomization
-                if (info.Moving != prevMoving)
-                {
-                    player.RandomizeMirroredFlag();
-                }
 
                 if (info.Moving) // Moving
                 {
@@ -104,7 +97,7 @@ namespace CraftSharp.Control
                     var currentHorizontalVelocity = currentVelocity;
                     currentHorizontalVelocity.y = 0F;
 
-                    moveVelocity = Vector3.Lerp(currentHorizontalVelocity, targetMoveVelocity, 0.25F);
+                    moveVelocity = Vector3.Lerp(currentHorizontalVelocity, targetMoveVelocity, 0.5F);
                 }
                 else // Idle or braking
                 {
@@ -113,7 +106,7 @@ namespace CraftSharp.Control
                     
                     var currentHorizontalVelocity = currentVelocity;
                     currentHorizontalVelocity.y = 0F;
-                    moveVelocity = Vector3.Lerp(currentHorizontalVelocity, Vector3.zero, 0.25F);
+                    moveVelocity = Vector3.Lerp(currentHorizontalVelocity, Vector3.zero, 0.5F);
                     moveVelocity.y = 0F;
                     
                     _sprintRequested = false;

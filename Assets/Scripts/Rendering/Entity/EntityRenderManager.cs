@@ -11,7 +11,7 @@ namespace CraftSharp.Rendering
         #region GameObject Prefabs for each entity type
         [SerializeField] private GameObject defaultPrefab;
 
-        [SerializeField] private GameObject serverPlayerPrefab;
+        [SerializeField] private GameObject playerPrefab;
         [SerializeField] private GameObject skeletonPrefab;
         [SerializeField] private GameObject witherSkeletonPrefab;
         [SerializeField] private GameObject strayPrefab;
@@ -81,7 +81,20 @@ namespace CraftSharp.Rendering
         /// Create a new entity render from given entity data
         /// </summary>
         /// <param name="entitySpawn">Entity data</param>
-        public void AddEntityRender(EntitySpawnData entitySpawn)
+        public EntityRender AddEntityRender(EntitySpawnData entitySpawn)
+        {
+            var entityPrefab = GetPrefabForType(entitySpawn.Type.TypeId);
+
+            return AddEntityRenderFromGivenPrefab(entitySpawn, entityPrefab);
+        }
+
+        /// <summary>
+        /// Create a new entity render from given entity data, and prefab
+        /// </summary>
+        /// <param name="entitySpawn">Entity data</param>
+        /// <param name="entityPrefab">Entity prefab</param>
+        /// 
+        public EntityRender AddEntityRenderFromGivenPrefab(EntitySpawnData entitySpawn, GameObject entityPrefab)
         {
             // If the numeral id is occupied by an entity already,
             // destroy this entity first
@@ -96,9 +109,6 @@ namespace CraftSharp.Rendering
                 nearbyEntities.Remove(entitySpawn.Id);
             }
 
-            var entityPrefab = entitySpawn.Type.TypeId == EntityType.PLAYER_ID ?
-                serverPlayerPrefab : GetPrefabForType(entitySpawn.Type.TypeId);
-
             if (entityPrefab)
             {
                 var entityObj = Instantiate(entityPrefab, transform, true);
@@ -110,7 +120,11 @@ namespace CraftSharp.Rendering
 
                 // Initialize the entity
                 entityRender.Initialize(entitySpawn, _worldOriginOffset);
+                
+                return entityRender;
             }
+
+            return null;
         }
 
         /// <summary>
@@ -169,6 +183,21 @@ namespace CraftSharp.Rendering
                 render.Position.Value = CoordConvert.MC2Unity(_worldOriginOffset, location);
             }
         }
+        
+        /// <summary>
+        /// Update the yaw and pitch of a given entity
+        /// </summary>
+        /// <param name="entityId">Numeral id of the entity to rotate</param>
+        /// <param name="yaw">Float angle in degrees</param>
+        /// <param name="pitch">Float angle in degrees</param>
+        public void RotateEntityRender(int entityId, float yaw, float pitch)
+        {
+            if (entityRenders.ContainsKey(entityId))
+            {
+                entityRenders[entityId].Yaw.Value = yaw;
+                entityRenders[entityId].Pitch.Value = pitch;
+            }
+        }
 
         /// <summary>
         /// Update the yaw and pitch of a given entity
@@ -182,6 +211,20 @@ namespace CraftSharp.Rendering
             {
                 entityRenders[entityId].Yaw.Value = EntitySpawnData.GetYawFromByte(yaw);
                 entityRenders[entityId].Pitch.Value = EntitySpawnData.GetPitchFromByte(pitch);
+            }
+        }
+        
+        /// <summary>
+        /// Update the head yaw of a given entity
+        /// </summary>
+        /// <param name="entityId">Numeral id of the entity</param>
+        /// <param name="headYaw">Float angle in degrees</param>
+        public void RotateEntityRenderHead(int entityId, float headYaw)
+        {
+            if (entityRenders.TryGetValue(entityId, out var render)
+                && render is LivingEntityRender livingEntityRender)
+            {
+                livingEntityRender.HeadYaw.Value = headYaw;
             }
         }
 
@@ -204,13 +247,20 @@ namespace CraftSharp.Rendering
         /// </summary>
         public void ReloadEntityRenders()
         {
+            const int clientEntityId = BaseCornClient.CLIENT_ENTITY_ID_INTERNAL;
+            var hasClientEntity = entityRenders.TryGetValue(clientEntityId, out var clientEntityRender);
+            
             var ids = entityRenders.Keys.ToArray();
             foreach (var id in ids)
             {
-                entityRenders[id].Unload();
+                if (id != clientEntityId)
+                    entityRenders[id].Unload();
             }
             entityRenders.Clear();
             nearbyEntities.Clear();
+            
+            if (hasClientEntity)
+                entityRenders.Add(clientEntityId, clientEntityRender);
         }
 
         /// <summary>
@@ -300,7 +350,7 @@ namespace CraftSharp.Rendering
 
             // Register entity render prefabs ===========================================
             // Server player
-            entityPrefabs.Add(EntityType.PLAYER_ID,            serverPlayerPrefab);
+            entityPrefabs.Add(EntityType.PLAYER_ID,            playerPrefab);
             // Hostile Mobs
             entityPrefabs.Add(EntityType.SKELETON_ID,          skeletonPrefab);
             entityPrefabs.Add(EntityType.WITHER_SKELETON_ID,   witherSkeletonPrefab);
@@ -359,10 +409,15 @@ namespace CraftSharp.Rendering
                 // Call managed update
                 render.ManagedUpdate(tickMilSec, cameraTransform);
 
+                if (render.IsClientEntity)
+                {
+                    continue;
+                }
+
                 // Update entities around the player
-                float dist = (render.transform.position - client.GetPosition()).sqrMagnitude;
-                int entityId = render.NumeralId;
-                bool inNearbyDict = nearbyEntities.ContainsKey(entityId);
+                var dist = (render.transform.position - client.GetPosition()).sqrMagnitude;
+                var entityId = render.NumeralId;
+                var inNearbyDict = nearbyEntities.ContainsKey(entityId);
 
                 if (dist < NEARBY_THRESHOLD_INNER) // Add entity to dictionary
                 {

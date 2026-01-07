@@ -21,12 +21,6 @@ namespace CraftSharp.Control
                 bool prevMoving = info.Moving;
                 info.Moving = inputData.Locomotion.Movement.IsPressed();
 
-                // Animation mirror randomization
-                if (info.Moving != prevMoving)
-                {
-                    player.RandomizeMirroredFlag();
-                }
-
                 // Player can only move slowly in this state
                 var moveSpeed = ability.SneakSpeed;
                 Vector3 moveVelocity;
@@ -77,8 +71,6 @@ namespace CraftSharp.Control
             var attackStatus = info.AttackStatus;
             attackStatus.AttackCooldown = 0F;
 
-            player.ChangeItemState(PlayerController.CurrentItemState.HoldInOffhand);
-
             player.UseAimingCamera(true);
         }
 
@@ -88,8 +80,6 @@ namespace CraftSharp.Control
 
             var attackStatus = info.AttackStatus;
             attackStatus.AttackCooldown = 0F;
-
-            player.ChangeItemState(PlayerController.CurrentItemState.Mount);
 
             player.UseAimingCamera(false);
         }
