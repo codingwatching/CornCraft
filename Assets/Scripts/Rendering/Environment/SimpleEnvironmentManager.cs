@@ -6,8 +6,6 @@ namespace CraftSharp.Rendering
 {
     public class SimpleEnvironmentManager : BaseEnvironmentManager
     {
-        private const float TICK_SECONDS = 0.05F;
-
         [SerializeField] private Transform sunTransform;
         [SerializeField] private Light sunLight;
         [SerializeField] private AnimationCurve lightIntensity;
@@ -22,8 +20,6 @@ namespace CraftSharp.Rendering
         private int ticks;
         private int lastRecTicks = int.MinValue;
         private bool simulate = false;
-
-        private float deltaSeconds = 0F;
 
         public override void SetCamera(Camera mainCamera)
         {
@@ -51,7 +47,7 @@ namespace CraftSharp.Rendering
                 // Make sure to update time if pause is toggled
                 UpdateTime(lastRecTicks);
             }
-            else if (Mathf.Abs(ticks - lastRecTicks) > 25F)
+            else if (Mathf.Abs(ticks - lastRecTicks) > 3)
             {
                 UpdateTime(lastRecTicks);
             }
@@ -73,34 +69,22 @@ namespace CraftSharp.Rendering
                     action.Invoke();
                 };
 
-                StartCoroutine(delayed(() => DynamicGI.UpdateEnvironment()));
+                StartCoroutine(delayed(DynamicGI.UpdateEnvironment));
             }
         }
 
-        private void Update()
+        private void FixedUpdate()
         {
             if (!simulate) return;
             
             // Simulate time passing
-            deltaSeconds += Time.unscaledDeltaTime;
-
-            if (deltaSeconds > TICK_SECONDS)
-            {
-                while (deltaSeconds > TICK_SECONDS)
-                {
-                    deltaSeconds -= TICK_SECONDS;
-                    ticks++;
-                }
-
-                UpdateTimeRelated();
-            }
+            ticks++;
+            UpdateTimeRelated();
         }
 
         private void UpdateTime(int serverTicks)
         {
             ticks = serverTicks;
-            // Reset delta seconds
-            deltaSeconds = 0F;
 
             UpdateTimeRelated();
         }
@@ -141,8 +125,8 @@ namespace CraftSharp.Rendering
 
         public static (int hours, int minutes, int seconds) Tick2HMS(int ticks)
         {
-            int hours = (ticks / 1000 + 6) % 24;
-            int secsInHour = (int)(ticks % 1000 * 3.6F);
+            var hours = (ticks / 1000 + 6) % 24;
+            var secsInHour = (int)(ticks % 1000 * 3.6F);
 
             return (hours, secsInHour / 60, secsInHour % 60);
         }
