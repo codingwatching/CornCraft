@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using UnityEngine;
 
 using CraftSharp.Control;
@@ -196,6 +197,10 @@ namespace CraftSharp
         public abstract T InvokeOnNetMainThread<T>(Func<T> task);
 
         public abstract void InvokeOnNetMainThread(Action task);
+
+        public abstract Task<T> InvokeOnNetMainThreadAsync<T>(Func<T> task);
+
+        public abstract Task InvokeOnNetMainThreadAsync(Action task);
 
         #endregion
 

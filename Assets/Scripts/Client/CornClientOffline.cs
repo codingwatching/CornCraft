@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -193,6 +194,31 @@ namespace CraftSharp
         public override void InvokeOnNetMainThread(Action task)
         {
             task.Invoke();
+        }
+
+        public override Task<T> InvokeOnNetMainThreadAsync<T>(Func<T> task)
+        {
+            try
+            {
+                return Task.FromResult(task.Invoke());
+            }
+            catch (Exception ex)
+            {
+                return Task.FromException<T>(ex);
+            }
+        }
+
+        public override Task InvokeOnNetMainThreadAsync(Action task)
+        {
+            try
+            {
+                task.Invoke();
+                return Task.CompletedTask;
+            }
+            catch (Exception ex)
+            {
+                return Task.FromException(ex);
+            }
         }
 
         #endregion

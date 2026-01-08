@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using CraftSharp.Protocol.Message;
 using CraftSharp.Inventory;
 using CraftSharp.Inventory.Recipe;
@@ -52,6 +53,13 @@ namespace CraftSharp.Protocol
         T InvokeOnNetMainThread<T>(Func<T> task);
 
         /// <summary>
+        /// Invoke a task on the main thread asynchronously and retrieve return value.
+        /// </summary>
+        /// <param name="task">Task to run with any type or return value</param>
+        /// <typeparam name="T">Type of the return value</typeparam>
+        Task<T> InvokeOnNetMainThreadAsync<T>(Func<T> task);
+
+        /// <summary>
         /// Invoke a task on the main thread and wait for completion
         /// </summary>
         /// <param name="task">Task to run without return value</param>
@@ -59,6 +67,12 @@ namespace CraftSharp.Protocol
         /// <example>InvokeOnNetMainThread(() => methodThatReturnsNothing(argument));</example>
         /// <example>InvokeOnNetMainThread(() => { yourCode(); });</example>
         void InvokeOnNetMainThread(Action task);
+
+        /// <summary>
+        /// Invoke a task on the main thread asynchronously.
+        /// </summary>
+        /// <param name="task">Task to run without return value</param>
+        Task InvokeOnNetMainThreadAsync(Action task);
 
         /// <summary>
         /// Called when a network packet received or sent

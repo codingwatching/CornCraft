@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Net.Sockets;
 using System.Threading;
+using System.Threading.Tasks;
 using System.IO;
 using System.Linq;
 using UnityEngine;
@@ -534,17 +535,7 @@ namespace CraftSharp
         /// <typeparam name="T">Type of the return value</typeparam>
         public override T InvokeOnNetMainThread<T>(Func<T> task)
         {
-            if (!InvokeRequired)
-            {
-                return task();
-            }
-
-            TaskWithResult<T> taskWithResult = new(task);
-            lock (threadTasksLock)
-            {
-                threadTasks.Enqueue(taskWithResult.ExecuteSynchronously);
-            }
-            return taskWithResult.WaitGetResult();
+            return InvokeOnNetMainThreadAsync(task).GetAwaiter().GetResult();
         }
 
         /// <summary>
@@ -556,7 +547,55 @@ namespace CraftSharp
         /// <example>InvokeOnNetMainThread(() => { yourCode(); });</example>
         public override void InvokeOnNetMainThread(Action task)
         {
-            InvokeOnNetMainThread(() => { task(); return true; });
+            InvokeOnNetMainThreadAsync(task).GetAwaiter().GetResult();
+        }
+
+        /// <summary>
+        /// Invoke a task on the main thread, return a task that completes once done.
+        /// </summary>
+        public override Task<T> InvokeOnNetMainThreadAsync<T>(Func<T> task)
+        {
+            if (!InvokeRequired)
+            {
+                try
+                {
+                    return Task.FromResult(task());
+                }
+                catch (Exception ex)
+                {
+                    return Task.FromException<T>(ex);
+                }
+            }
+
+            var tcs = new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously);
+            lock (threadTasksLock)
+            {
+                threadTasks.Enqueue(() =>
+                {
+                    try
+                    {
+                        var result = task();
+                        tcs.SetResult(result);
+                    }
+                    catch (Exception ex)
+                    {
+                        tcs.SetException(ex);
+                    }
+                });
+            }
+            return tcs.Task;
+        }
+
+        /// <summary>
+        /// Invoke a task on the main thread asynchronously.
+        /// </summary>
+        public override Task InvokeOnNetMainThreadAsync(Action task)
+        {
+            return InvokeOnNetMainThreadAsync(() =>
+            {
+                task();
+                return true;
+            });
         }
 
         /// <summary>
@@ -785,7 +824,7 @@ namespace CraftSharp
             if (string.IsNullOrWhiteSpace(text)) return;
             try
             {
-                InvokeOnNetMainThread(() => SendChat(text));
+                InvokeOnNetMainThreadAsync(() => SendChat(text));
             }
             catch (IOException) { }
             catch (NullReferenceException) { }
@@ -833,7 +872,13 @@ namespace CraftSharp
         /// <returns>True if packet successfully sent</returns>
         public override bool SendRespawnPacket()
         {
-            return InvokeRequired ? InvokeOnNetMainThread(SendRespawnPacket) : handler!.SendRespawnPacket();
+            if (InvokeRequired)
+            {
+                _ = InvokeOnNetMainThreadAsync(SendRespawnPacket);
+                return true;
+            }
+
+            return handler!.SendRespawnPacket();
         }
 
         /// <summary>
@@ -842,8 +887,13 @@ namespace CraftSharp
         /// <returns>TRUE if the item was successfully used</returns>
         public override bool SendEntityAction(EntityActionType entityAction)
         {
-            return InvokeRequired ? InvokeOnNetMainThread(() => SendEntityAction(entityAction)) :
-                handler!.SendEntityAction(_clientEntitySpawn.Id, (int) entityAction);
+            if (InvokeRequired)
+            {
+                _ = InvokeOnNetMainThreadAsync(() => SendEntityAction(entityAction));
+                return true;
+            }
+
+            return handler!.SendEntityAction(_clientEntitySpawn.Id, (int) entityAction);
         }
 
         /// <summary>
@@ -856,7 +906,7 @@ namespace CraftSharp
             // the result options while passing in '/gamemode' yields nothing...
             try
             {
-                InvokeOnNetMainThread(() => handler!.SendAutoCompleteText(text));
+                _ = InvokeOnNetMainThreadAsync(() => handler!.SendAutoCompleteText(text));
             }
             catch (IOException) { }
             catch (NullReferenceException) { }
@@ -868,7 +918,13 @@ namespace CraftSharp
         /// <returns>TRUE if the item was successfully used</returns>
         public override bool UseItemOnMainHand()
         {
-            return InvokeRequired ? InvokeOnNetMainThread(UseItemOnMainHand) : handler!.SendUseItem(0, sequenceId++);
+            if (InvokeRequired)
+            {
+                _ = InvokeOnNetMainThreadAsync(UseItemOnMainHand);
+                return true;
+            }
+
+            return handler!.SendUseItem(0, sequenceId++);
         }
 
         /// <summary>
@@ -877,7 +933,13 @@ namespace CraftSharp
         /// <returns>TRUE if the item was successfully used</returns>
         public override bool UseItemOnOffHand()
         {
-            return InvokeRequired ? InvokeOnNetMainThread(UseItemOnOffHand) : handler!.SendUseItem(1, sequenceId++);
+            if (InvokeRequired)
+            {
+                _ = InvokeOnNetMainThreadAsync(UseItemOnOffHand);
+                return true;
+            }
+
+            return handler!.SendUseItem(1, sequenceId++);
         }
         
         /// <summary>
@@ -886,7 +948,13 @@ namespace CraftSharp
         /// <returns>TRUE if the item was successfully picked</returns>
         public override bool PickItem(int slotToUse)
         {
-            return InvokeRequired ? InvokeOnNetMainThread(() => PickItem(slotToUse)) : handler!.SendPickItem(slotToUse);
+            if (InvokeRequired)
+            {
+                _ = InvokeOnNetMainThreadAsync(() => PickItem(slotToUse));
+                return true;
+            }
+
+            return handler!.SendPickItem(slotToUse);
         }
 
         /// <summary>
@@ -896,7 +964,7 @@ namespace CraftSharp
         {
             if (InvokeRequired)
             {
-                InvokeOnNetMainThread(OpenPlayerInventory);
+                InvokeOnNetMainThreadAsync(OpenPlayerInventory);
                 return;
             }
             
@@ -918,7 +986,10 @@ namespace CraftSharp
         public override bool DoInventoryAction(int inventoryId, int slot, InventoryActionType actionType)
         {
             if (InvokeRequired)
-                return InvokeOnNetMainThread(() => DoInventoryAction(inventoryId, slot, actionType));
+            {
+                _ = InvokeOnNetMainThreadAsync(() => DoInventoryAction(inventoryId, slot, actionType));
+                return true;
+            }
 
             ItemStack? sendItem = null;
             //if (inventories.ContainsKey(inventoryId) && inventories[inventoryId].Items.TryGetValue(slot, out var iii))
@@ -1407,7 +1478,13 @@ namespace CraftSharp
         /// <returns>TRUE if the button was successfully clicked</returns>
         public override bool DoInventoryButtonClick(int inventoryId, int buttonId)
         {
-            return InvokeRequired ? InvokeOnNetMainThread(() => DoInventoryButtonClick(inventoryId, buttonId)) : handler!.SendInventoryButtonClick(inventoryId, buttonId);
+            if (InvokeRequired)
+            {
+                _ = InvokeOnNetMainThreadAsync(() => DoInventoryButtonClick(inventoryId, buttonId));
+                return true;
+            }
+
+            return handler!.SendInventoryButtonClick(inventoryId, buttonId);
         }
 
         /// <summary>
@@ -1421,7 +1498,13 @@ namespace CraftSharp
         /// <returns>TRUE if item given successfully</returns>
         public override bool DoCreativeGive(int slot, Item itemType, int count, Dictionary<string, object>? nbt = null)
         {
-            return InvokeRequired ? InvokeOnNetMainThread(() => DoCreativeGive(slot, itemType, count, nbt)) : handler!.SendCreativeInventoryAction(slot, itemType, count, nbt);
+            if (InvokeRequired)
+            {
+                _ = InvokeOnNetMainThreadAsync(() => DoCreativeGive(slot, itemType, count, nbt));
+                return true;
+            }
+
+            return handler!.SendCreativeInventoryAction(slot, itemType, count, nbt);
         }
 
         /// <summary>
@@ -1431,7 +1514,13 @@ namespace CraftSharp
         /// <returns>TRUE if animation successfully done</returns>
         public override bool DoAnimation(int playerAnimation)
         {
-            return InvokeRequired ? InvokeOnNetMainThread(() => DoAnimation(playerAnimation)) : handler!.SendAnimation(playerAnimation, _clientEntitySpawn.Id);
+            if (InvokeRequired)
+            {
+                _ = InvokeOnNetMainThreadAsync(() => DoAnimation(playerAnimation));
+                return true;
+            }
+
+            return handler!.SendAnimation(playerAnimation, _clientEntitySpawn.Id);
         }
         
         /// <summary>
@@ -1441,7 +1530,13 @@ namespace CraftSharp
         /// <returns>TRUE if new name successfully set</returns>
         public override bool SetAnvilRenameText(string newName)
         {
-            return InvokeRequired ? InvokeOnNetMainThread(() => SetAnvilRenameText(newName)) : handler!.SendRenameItem(newName);
+            if (InvokeRequired)
+            {
+                _ = InvokeOnNetMainThreadAsync(() => SetAnvilRenameText(newName));
+                return true;
+            }
+
+            return handler!.SendRenameItem(newName);
         }
 
         /// <summary>
@@ -1452,7 +1547,13 @@ namespace CraftSharp
         /// <returns>TRUE if effects successfully set</returns>
         public override bool SetBeaconEffects(int primary, int secondary)
         {
-            return InvokeRequired ? InvokeOnNetMainThread(() => SetBeaconEffects(primary, secondary)) : handler!.SendBeaconEffects(primary, secondary);
+            if (InvokeRequired)
+            {
+                _ = InvokeOnNetMainThreadAsync(() => SetBeaconEffects(primary, secondary));
+                return true;
+            }
+
+            return handler!.SendBeaconEffects(primary, secondary);
         }
 
         /// <summary>
@@ -1464,7 +1565,10 @@ namespace CraftSharp
         public override bool CloseInventory(int inventoryId)
         {
             if (InvokeRequired)
-                return InvokeOnNetMainThread(() => CloseInventory(inventoryId));
+            {
+                _ = InvokeOnNetMainThreadAsync(() => CloseInventory(inventoryId));
+                return true;
+            }
 
             if (inventories.ContainsKey(inventoryId))
             {
@@ -1482,7 +1586,10 @@ namespace CraftSharp
         public override bool ClearInventories()
         {
             if (InvokeRequired)
-                return InvokeOnNetMainThread(ClearInventories);
+            {
+                _ = InvokeOnNetMainThreadAsync(ClearInventories);
+                return true;
+            }
 
             inventories.Clear();
             inventories[0] = new InventoryData(0, InventoryTypePalette.INSTANCE.PLAYER,
@@ -1502,9 +1609,14 @@ namespace CraftSharp
         public override bool UpdateSign(BlockLoc blockLoc, bool isFrontText, string line1,
             string line2, string line3, string line4)
         {
-            return InvokeRequired ? InvokeOnNetMainThread(() =>
-                    UpdateSign(blockLoc, isFrontText, line1, line2, line3, line4)) :
-                handler!.SendUpdateSign(blockLoc, isFrontText, line1, line2, line3, line4);
+            if (InvokeRequired)
+            {
+                _ = InvokeOnNetMainThreadAsync(() =>
+                    UpdateSign(blockLoc, isFrontText, line1, line2, line3, line4));
+                return true;
+            }
+
+            return handler!.SendUpdateSign(blockLoc, isFrontText, line1, line2, line3, line4);
         }
 
         /// <summary>
@@ -1517,7 +1629,10 @@ namespace CraftSharp
         public override bool InteractEntity(int entityId, int type, Hand hand = Hand.MainHand)
         {
             if (InvokeRequired)
-                return InvokeOnNetMainThread(() => InteractEntity(entityId, type, hand));
+            {
+                _ = InvokeOnNetMainThreadAsync(() => InteractEntity(entityId, type, hand));
+                return true;
+            }
 
             if (EntityRenderManager.HasEntityRender(entityId))
             {
@@ -1541,8 +1656,13 @@ namespace CraftSharp
         /// <returns>TRUE if successfully placed</returns>
         public override bool PlaceBlock(BlockLoc blockLoc, Direction blockFace, float x, float y, float z, Hand hand = Hand.MainHand)
         {
-            return InvokeRequired ? InvokeOnNetMainThread(() => PlaceBlock(blockLoc, blockFace, x, y, z)) :
-                handler!.SendPlayerBlockPlacement((int)hand, blockLoc, x, y, z, blockFace, sequenceId++);
+            if (InvokeRequired)
+            {
+                _ = InvokeOnNetMainThreadAsync(() => PlaceBlock(blockLoc, blockFace, x, y, z));
+                return true;
+            }
+
+            return handler!.SendPlayerBlockPlacement((int)hand, blockLoc, x, y, z, blockFace, sequenceId++);
         }
 
         /// <summary>
@@ -1554,7 +1674,10 @@ namespace CraftSharp
         public override bool DigBlock(BlockLoc blockLoc, Direction blockFace, DiggingStatus status)
         {
             if (InvokeRequired)
-                return InvokeOnNetMainThread(() => DigBlock(blockLoc, blockFace, status));
+            {
+                _ = InvokeOnNetMainThreadAsync(() => DigBlock(blockLoc, blockFace, status));
+                return true;
+            }
 
             return status switch
             {
@@ -1641,7 +1764,10 @@ namespace CraftSharp
                 return false;
 
             if (InvokeRequired)
-                return InvokeOnNetMainThread(() => ChangeHotbarSlot(slot));
+            {
+                _ = InvokeOnNetMainThreadAsync(() => ChangeHotbarSlot(slot));
+                return true;
+            }
             
             // There won't be confirmation from the server
             // Simply set it on the client side
@@ -1660,8 +1786,13 @@ namespace CraftSharp
         /// <param name="selectedSlot">The slot of the trade, starts at 0</param>
         public bool SelectTrade(int selectedSlot)
         {
-            return InvokeRequired ? InvokeOnNetMainThread(() => SelectTrade(selectedSlot)) :
-                handler!.SelectTrade(selectedSlot);
+            if (InvokeRequired)
+            {
+                _ = InvokeOnNetMainThreadAsync(() => SelectTrade(selectedSlot));
+                return true;
+            }
+
+            return handler!.SelectTrade(selectedSlot);
         }
 
         /// <summary>
@@ -1682,9 +1813,13 @@ namespace CraftSharp
         {
             if (GameMode == GameMode.Spectator)
             {
-                return InvokeRequired ?
-                    InvokeOnNetMainThread(() => SpectateByUUID(UUID)) :
-                    handler!.SendSpectate(UUID);
+                if (InvokeRequired)
+                {
+                    _ = InvokeOnNetMainThreadAsync(() => SpectateByUUID(UUID));
+                    return true;
+                }
+
+                return handler!.SendSpectate(UUID);
             }
             return false;
         }

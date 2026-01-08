@@ -1190,7 +1190,7 @@ namespace CraftSharp.Rendering
                 if (!client) return;
                 
                 // Make sure to set block from network thread
-                client.InvokeOnNetMainThread(() =>
+                client.InvokeOnNetMainThreadAsync(() =>
                 {
                     var block = new Block((ushort) e.BlockStateId);
                     //Debug.Log($"Prediction: {e.BlockLoc} => {block}");
