@@ -1194,6 +1194,16 @@ namespace CraftSharp.Control
                 {
                     blockSelectionBox.ClearShape();
                 }
+                
+                if (liquidSelectionBox)
+                {
+                    liquidSelectionBox.ClearAABB();
+                }
+
+                if (entitySelectionBox)
+                {
+                    entitySelectionBox.ClearAABB();
+                }
             }
         }
 
