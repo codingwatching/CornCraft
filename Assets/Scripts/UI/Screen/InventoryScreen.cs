@@ -388,8 +388,10 @@ namespace CraftSharp.UI
                     {
                         dragging = true;
                         currentSlots[dragStartSlot].Dragged = true;
+                        currentSlots[slotId].Dragged = true;
                         draggedSlots.Clear();
                         draggedSlots.Add(dragStartSlot);
+                        draggedSlots.Add(slotId);
                         
                         var action = mouseButton switch
                         {
@@ -407,10 +409,10 @@ namespace CraftSharp.UI
                             _ => throw new ArgumentOutOfRangeException()
                         };
                         game.DoInventoryAction(activeInventoryId, dragStartSlot, action);
+                        game.DoInventoryAction(activeInventoryId, slotId, action);
                         cursorTextPanel.gameObject.SetActive(false);
                     }
-                    
-                    if (dragging && !draggedSlots.Contains(slotId) && slotType.MaxCount == int.MaxValue &&
+                    else if (dragging && !draggedSlots.Contains(slotId) && slotType.MaxCount == int.MaxValue &&
                         game.CheckAddDragged(target, slotType.PlacePredicate)) // Add this slot
                     {
                         currentSlots[slotId].Dragged = true;
