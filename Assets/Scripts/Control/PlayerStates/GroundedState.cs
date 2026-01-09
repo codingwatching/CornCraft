@@ -10,7 +10,6 @@ namespace CraftSharp.Control
         private const float SPRINT_STAMINA_START_MIN = 5F;
         private const float SPRINT_STAMINA_STOP = 1F;
 
-        private bool _jumpRequested = false;
         private bool _sprintRequested = false;
 
         public void UpdateMain(ref Vector3 currentVelocity, float interval, PlayerActions inputData, PlayerStatus info, PlayerController player)
@@ -44,18 +43,23 @@ namespace CraftSharp.Control
             // Movement velocity update
             Vector3 moveVelocity;
 
-            if (_jumpRequested) // Jump
+            if (info.JumpRequested) // Jump
             {
                 // Update current yaw to target yaw, immediately
                 info.CurrentVisualYaw = info.TargetVisualYaw;
 
-                // Apply vertical velocity to horizontal velocity
-                moveVelocity = currentVelocity + player.transform.up * 9F;
+                var moveSpeed = info.Sprinting ? ability.SprintSpeed : info.Sneaking ? ability.SneakSpeed : ability.WalkSpeed;
+
+                // Apply vertical and horizontal velocity
+                moveVelocity = info.Moving ? player.GetMovementOrientation() * Vector3.forward * moveSpeed : currentVelocity;
+                moveVelocity.y = 9F;
+
+                // Debug.Log($"Grounded jump: Ground dist: {info.GroundDistFromFeet}, Velocity: {player.CurrentVelocity}");
                 
                 // Reset jump time
                 info.JumpTime = 0;
 
-                _jumpRequested = false;
+                info.JumpRequested = false;
             }
             else // Stay on ground
             {
@@ -154,13 +158,13 @@ namespace CraftSharp.Control
             }
 
             // Reset request flags
-            _jumpRequested = false;
+            // info.JumpRequested = false; // Might be set in AirborneState
             _sprintRequested = player.Actions.Locomotion.Sprint.IsPressed();
 
             player.Actions.Locomotion.Jump.performed += jumpRequestCallback = _ =>
             {
                 // Set jump flag
-                _jumpRequested = true;
+                info.JumpRequested = true;
             };
 
             player.Actions.Locomotion.Sprint.performed += sprintRequestCallback = _ =>
@@ -174,6 +178,8 @@ namespace CraftSharp.Control
                 // Set sprint flag
                 _sprintRequested = true;
             };
+            
+            // Debug.Log($"Enter grounded state. Velocity: {player.CurrentVelocity}");
         }
 
         public void OnExit(IPlayerState nextState, PlayerStatus info, PlayerController player)
@@ -187,6 +193,8 @@ namespace CraftSharp.Control
             // Unregister input action events
             player.Actions.Locomotion.Jump.performed -= jumpRequestCallback;
             player.Actions.Locomotion.Sprint.performed -= sprintRequestCallback;
+            
+            // Debug.Log($"Exit grounded state. Velocity: {player.CurrentVelocity}");
         }
 
         public override string ToString() => "Grounded";

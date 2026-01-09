@@ -11,8 +11,7 @@ namespace CraftSharp.Control
         private const float GROUND_CHECK_TOLERANCE = 1E-2F; // Allow slight penetration/float
         private const float MOVEMENT_EPSILON = 1E-4F; // Threshold to consider movement negligible
         private const float MAX_STEP_HEIGHT = 0.125F;
-        private const float HIGH_STEP_MAX_HEIGHT = 1.125F;
-        private const float HIGH_STEP_MAX_HEIGHT_SNEAKING = 0.5F;
+        private const float HIGH_STEP_MAX_HEIGHT = 0.65F;
         private const float HIGH_STEP_LIFT_AMOUNT = 0.25F;
         private const float FORWARD_STEP_DOT_THRESHOLD = 0.5F;
         private const float STEP_FORWARD_CHECK_OFFSET = 0.125F;
@@ -103,11 +102,7 @@ namespace CraftSharp.Control
                 steppingLimit = HIGH_STEP_MAX_HEIGHT;
             }
 
-            // Special handling: If player is sneaking, limit the stepping height
-            if (Status.Sneaking)
-            {
-                steppingLimit = HIGH_STEP_MAX_HEIGHT_SNEAKING - Status.GroundDistFromFeet;
-            }
+            var velocityBeforeStepping = velocity;
 
             var newPosition = CalculateNewPlayerPosition(transform.position, offset, movementForward,
                 steppingLimit, isSneaking, terrainAABBs, dimensions,
@@ -130,7 +125,13 @@ namespace CraftSharp.Control
                     velocity.y = 0F;
                 }
             }
-            
+
+            // If stepping adjusted our motion, update velocity to match actual movement
+            if (duringStepping)
+            {
+                velocity.y = HIGH_STEP_LIFT_AMOUNT;
+            }
+
             transform.position = newPosition;
         }
 
@@ -358,10 +359,10 @@ namespace CraftSharp.Control
                 var shiftedZ = newPos.z + forwardShift.z;
 
                 // Add extra player radius to prevent false-negative
-                var playerMinX = shiftedX - playerRadius - 0.125F;
-                var playerMaxX = shiftedX + playerRadius + 0.125F;
-                var playerMinZ = shiftedZ - playerRadius - 0.125F;
-                var playerMaxZ = shiftedZ + playerRadius + 0.125F;
+                var playerMinX = shiftedX - playerRadius - 0.05F;
+                var playerMaxX = shiftedX + playerRadius + 0.05F;
+                var playerMinZ = shiftedZ - playerRadius - 0.05F;
+                var playerMaxZ = shiftedZ + playerRadius + 0.05F;
 
                 foreach (var aabb in terrainAABBs)
                 {

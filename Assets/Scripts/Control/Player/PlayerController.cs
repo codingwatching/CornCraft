@@ -35,6 +35,7 @@ namespace CraftSharp.Control
         public void DisableInput() => Actions?.Disable();
         
         private Vector3 currentVelocity = Vector3.zero;
+        public Vector3 CurrentVelocity => currentVelocity;
 
 #nullable enable
         

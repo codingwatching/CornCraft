@@ -104,13 +104,13 @@ namespace CraftSharp.Control
                 else
                 {
                     // Apply gravity when gliding and not flying (Not additive when gliding)
-                    moveVelocity += info.GravityScale * 2F * interval * Physics.gravity;
+                    moveVelocity += info.GravityScale * 3F * interval * Physics.gravity;
                 }
             }
             else // Falling
             {
                 // Apply gravity
-                moveVelocity = currentVelocity + info.GravityScale * 2F * interval * Physics.gravity;
+                moveVelocity = currentVelocity + info.GravityScale * 3F * interval * Physics.gravity;
                 
                 // Speed limit check
                 if (moveVelocity.magnitude > ability.MaxFallSpeed)
@@ -179,9 +179,22 @@ namespace CraftSharp.Control
                     }
                     info.JumpTime = 0F;
                 }
+
+                if (info.GameMode != GameMode.Spectator && !info.Flying && !info.Gliding)
+                {
+                    // Debug.Log($"Airborne jump prep: Jump time: {info.JumpTime}, Ground dist: {info.GroundDistFromFeet}");
+
+                    if (info.GroundDistFromFeet <= 0.6F && player.CurrentVelocity.y < 0F)
+                    {
+                        Debug.Log("Requested jump before landing");
+                        info.JumpRequested = true;
+                    }
+                }
                 
                 //_glideToggleRequested = true;
             };
+            
+            // Debug.Log($"Enter airborne state. Velocity: {player.CurrentVelocity}");
         }
 
         public void OnExit(IPlayerState nextState, PlayerStatus info, PlayerController player)
@@ -205,6 +218,8 @@ namespace CraftSharp.Control
 
             // Unregister input action events
             player.Actions.Locomotion.Jump.performed -= flightToggleRequestCallback;
+            
+            // Debug.Log($"Exit airborne state. Velocity: {player.CurrentVelocity}");
         }
 
         public override string ToString() => "Airborne";

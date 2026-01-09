@@ -36,6 +36,11 @@ namespace CraftSharp.Control
         public float JumpTime = 0F;
 
         /// <summary>
+        /// Whether a jump input was requested this frame
+        /// </summary>
+        public bool JumpRequested = false;
+
+        /// <summary>
         /// Unused for now
         /// </summary>
         public bool Clinging  = false;
