@@ -10,6 +10,7 @@ namespace CraftSharp.Rendering
         private static readonly int BASE_MAP_HASH = Shader.PropertyToID("_BaseMap");
         
         [SerializeField] private ChunkMaterialPreset chunkMaterialPreset;
+        public ChunkMaterialPreset ChunkMaterialPreset => chunkMaterialPreset;
 
         private readonly Dictionary<RenderType, Material> atlasMaterials = new();
         private readonly Dictionary<RenderType, Material> inventoryMaterials = new();

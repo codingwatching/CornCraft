@@ -20,3 +20,4 @@ MonoBehaviour:
   UnlitCutout: {fileID: 2100000, guid: 25e3c6a99841a414b8fa6db68554bbc4, type: 2}
   Foliage: {fileID: 2100000, guid: 25e3c6a99841a414b8fa6db68554bbc4, type: 2}
   Plants: {fileID: 2100000, guid: 25e3c6a99841a414b8fa6db68554bbc4, type: 2}
+  EnableFog: 0

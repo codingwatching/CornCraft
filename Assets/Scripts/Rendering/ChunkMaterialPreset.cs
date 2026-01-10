@@ -13,5 +13,7 @@ namespace CraftSharp.Rendering
         public Material UnlitCutout;
         public Material Foliage;
         public Material Plants;
+
+        public bool EnableFog = true;
     }
 }

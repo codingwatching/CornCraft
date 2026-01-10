@@ -205,6 +205,14 @@ namespace CraftSharp
                     SwitchToFirstPlayerRender(_clientEntitySpawn);
                     // Create camera controller
                     SwitchToFirstCameraController();
+                    
+                    // Initialize material presets
+                    if (ChunkMaterialManager && ChunkMaterialManager.ChunkMaterialPreset)
+                    {
+                        var chunkPreset = ChunkMaterialManager.ChunkMaterialPreset;
+
+                        EnvironmentManager.SetFogEnabled(chunkPreset.EnableFog);
+                    }
 
                     return true; // Client successfully started
                 }
