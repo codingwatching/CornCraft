@@ -18,6 +18,19 @@ namespace CraftSharp.Control
         {
             var cameraYawDir = PlayerStatus.GetYawDirection(cameraYaw);
 
+            // Special handling for blocks with their wall-attached with unique ids
+            if (targetDirection is not Direction.Up and not Direction.Down)
+            {
+                if (blockId.Path.EndsWith("torch"))
+                {
+                    blockId = new ResourceLocation(blockId.Namespace, blockId.Path.Replace("torch", "wall_torch"));
+                }
+                else if (blockId.Path.EndsWith("banner"))
+                {
+                    blockId = new ResourceLocation(blockId.Namespace, blockId.Path.Replace("banner", "wall_banner"));
+                } 
+            }
+
             var palette = BlockStatePalette.INSTANCE;
             var propTable = palette.GetBlockProperties(blockId);
             var predicateProps = palette.GetDefault(blockId).Properties
@@ -25,9 +38,9 @@ namespace CraftSharp.Control
                 .ToDictionary(entry => entry.Key, entry => entry.Value);
 
             // See https://bugs.mojang.com/browse/MC/issues/MC-193943
-            // Bell & Cocoa: Don't invert
-            // Other blocks: Invert if wall-attached
-            bool invertFacing = true;
+            // Bell, Cocoa & Stairs: Don't invert
+            // Other Blocks: Don't invert
+            var invertFacing = true;
             
             if (propTable.ContainsKey("attachment")) // Used by bell
             {
@@ -48,12 +61,12 @@ namespace CraftSharp.Control
                     Direction.Down => "ceiling",
                     _ => "wall"
                 };
-                invertFacing = targetDirection is not Direction.Up and not Direction.Down; // Invert if wall-attached
+                invertFacing = targetDirection is not Direction.Up and not Direction.Down;
             }
 
             if (propTable.TryGetValue("facing", out var possibleValues))
             {
-                if (blockId == COCOA_ID) invertFacing = false;
+                if (blockId == COCOA_ID || blockId.Path.EndsWith("stairs")) invertFacing = false;
                 
                 if (possibleValues.Contains("up") && cameraPitch <= -44)
                 {
