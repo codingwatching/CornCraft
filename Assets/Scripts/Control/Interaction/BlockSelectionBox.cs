@@ -33,7 +33,7 @@ namespace CraftSharp.Control
         private BlockState? predictedBlockState;
         private Mesh? predictedBlockMesh;
 #nullable disable
-        private bool wasPredicted = false;
+        private BlockSelectionType _currentBlockSelectionType = BlockSelectionType.Existing;
         private int currentBoxCount = 0;
         private int createdBoxCount = 0;
         private int currentDestroyStage = -1;
@@ -67,13 +67,19 @@ namespace CraftSharp.Control
             return propBlock;
         }
 
-        public void UpdateShape(BlockShape blockShape, bool predicted)
+        public void UpdateShape(BlockShape blockShape, BlockSelectionType blockSelectionType)
         {
-            if (currentBlockShape == blockShape && wasPredicted == predicted) return;
+            if (currentBlockShape == blockShape && _currentBlockSelectionType == blockSelectionType) return;
             currentBlockShape = blockShape;
-            wasPredicted = predicted;
+            _currentBlockSelectionType = blockSelectionType;
 
-            var lineColor = predicted ? Color.cyan : Color.white;
+            var lineColor = blockSelectionType switch
+            {
+                BlockSelectionType.ValidPrediction => Color.cyan,
+                BlockSelectionType.InvalidPrediction => Color.red,
+                _ => Color.white
+            };
+            
             var aabbs = blockShape.AABBs.ToArray();
             var displayedBoxCount = Mathf.Min(aabbs.Length, MAX_AABB_COUNT);
 
