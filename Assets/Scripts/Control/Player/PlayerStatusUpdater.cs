@@ -190,7 +190,8 @@ namespace CraftSharp.Control
                 return finalPos;
             }
 
-            if (steppingLimit > 0F)
+            // Don't check for forward step-ups if the player is moving upwards
+            if (steppingLimit > 0F && effectiveOffset.y <= 0F)
             {
                 // Check for forward step-ups before resolving axes
                 TryHandleForwardStep(out duringStepping, out finishedStepping);

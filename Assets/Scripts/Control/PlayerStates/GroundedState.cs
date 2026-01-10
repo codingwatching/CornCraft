@@ -51,8 +51,8 @@ namespace CraftSharp.Control
                 var moveSpeed = info.Sprinting ? ability.SprintSpeed : info.Sneaking ? ability.SneakSpeed : ability.WalkSpeed;
 
                 // Apply vertical and horizontal velocity
-                moveVelocity = info.Moving ? player.GetMovementOrientation() * Vector3.forward * moveSpeed : currentVelocity;
-                moveVelocity.y = 9F;
+                moveVelocity = info.Moving ? player.GetMovementOrientation() * Vector3.forward * moveSpeed : currentVelocity * 0.5F;
+                moveVelocity.y = 10F;
 
                 // Debug.Log($"Grounded jump: Ground dist: {info.GroundDistFromFeet}, Velocity: {player.CurrentVelocity}");
                 

@@ -14,6 +14,7 @@ namespace CraftSharp.Control
 
         //private bool _glideToggleRequested = false;
         private bool _flightRequested = false;
+        private float _jumpRequestTime = 0F;
 
         public void UpdateMain(ref Vector3 currentVelocity, float interval, PlayerActions inputData, PlayerStatus info, PlayerController player)
         {
@@ -46,6 +47,8 @@ namespace CraftSharp.Control
                 info.Flying = info.GameMode == GameMode.Creative;
                 _flightRequested = false;
             }
+            
+            _jumpRequestTime = Mathf.MoveTowards(_jumpRequestTime, 1F, interval);
 
             info.AirTime += interval;
             info.JumpTime += interval;
@@ -180,15 +183,11 @@ namespace CraftSharp.Control
                     info.JumpTime = 0F;
                 }
 
-                if (info.GameMode != GameMode.Spectator && !info.Flying && !info.Gliding)
+                if (info.GameMode != GameMode.Spectator && info is { Flying: false, Gliding: false })
                 {
-                    // Debug.Log($"Airborne jump prep: Jump time: {info.JumpTime}, Ground dist: {info.GroundDistFromFeet}");
+                    // Debug.Log($"Airborne jump prep: Jump time: {info.JumpTime}, Ground dist: {info.GroundDistFromFeet}, Y Velocity: {player.CurrentVelocity.y}");
 
-                    if (info.GroundDistFromFeet <= 0.6F && player.CurrentVelocity.y < 0F)
-                    {
-                        // Debug.Log("Requested jump before landing");
-                        info.JumpRequested = true;
-                    }
+                    _jumpRequestTime = 0F;
                 }
                 
                 //_glideToggleRequested = true;
@@ -213,6 +212,20 @@ namespace CraftSharp.Control
 
                     // And reset air time
                     info.AirTime = 0F;
+                }
+            }
+
+            if (nextState is GroundedState)
+            {
+                if (info.GameMode != GameMode.Spectator && info is { Flying: false, Gliding: false })
+                {
+                    // Debug.Log($"Airborne jump prep: Jump time: {info.JumpTime}, Ground dist: {info.GroundDistFromFeet}, Y Velocity: {player.CurrentVelocity.y}");
+
+                    // The player is grounded slightly after making a jump request before grounding
+                    if (_jumpRequestTime <= 0.15F)
+                    {
+                        info.JumpRequested = true;
+                    }
                 }
             }
 
