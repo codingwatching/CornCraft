@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5d71eb10a5d494240b050cccd043ab55, type: 3}
+  m_Name: Entity Lit
+  m_EditorClassIdentifier: CraftSharp.App::CraftSharp.Rendering.EntityMaterialPreset
+  EntitySolid: {fileID: 2100000, guid: 4c85d187070a73a4dab748d8fb723ad7, type: 2}
+  EntityCutout: {fileID: 2100000, guid: a05dea9d3b1b3f44e8595824de6e7e6e, type: 2}
+  EntityCutoutDoubleSided: {fileID: 2100000, guid: 348df5940fcd6ff49ba95df0c2baddd2, type: 2}
+  EntityTranslucent: {fileID: 2100000, guid: 7c491abaab4c5b74fbd248bb5b82ef3c, type: 2}

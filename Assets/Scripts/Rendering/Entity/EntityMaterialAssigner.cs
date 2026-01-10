@@ -11,7 +11,6 @@ namespace CraftSharp.Rendering
     {
         [SerializeField] public EntityRenderType RenderType;
         [SerializeField] private Material m_DefaultMaterial = null;
-        public Material DefaultMaterial => m_DefaultMaterial!;
         [SerializeField] public string TextureId = string.Empty;
         [SerializeField] private Renderer[] m_Renderers;
         public Renderer[] Renderers => m_Renderers;
@@ -306,7 +305,7 @@ namespace CraftSharp.Rendering
                     continue;
                 }
 
-                matManager.ApplyMaterial(entry.RenderType, textureId, entry.DefaultMaterial, matInstance =>
+                matManager.ApplyMaterial(entry.RenderType, textureId, matInstance =>
                 {
                     AssignMaterialToRenderer(entry.Renderers, matInstance);
                 });
@@ -356,7 +355,7 @@ namespace CraftSharp.Rendering
                     textureId = ResourceLocation.FromString(entry.TextureId);
                 }
                 
-                matManager.ApplyMaterial(entry.RenderType, textureId, entry.DefaultMaterial, matInstance =>
+                matManager.ApplyMaterial(entry.RenderType, textureId, matInstance =>
                 {
                     AssignMaterialToRenderer(entry.Renderers, matInstance);
 

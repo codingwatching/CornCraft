@@ -11,5 +11,7 @@ namespace CraftSharp.Rendering
         public abstract void SetRain(bool raining);
         
         public abstract string GetTimeString();
+        
+        public abstract void SetFogEnabled(bool enable);
     }
 }

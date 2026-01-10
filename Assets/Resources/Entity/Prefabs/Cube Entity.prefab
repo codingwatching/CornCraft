@@ -281,6 +281,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1993495832377569330}
   - component: {fileID: 3445072782038573565}
+  - component: {fileID: -5839704568433406198}
   m_Layer: 10
   m_Name: Cube Entity
   m_TagString: Untagged
@@ -325,6 +326,24 @@ MonoBehaviour:
   ObjectData: -1
   _infoAnchor: {fileID: 1002350574447168253}
   _visualTransform: {fileID: 4934986444833276686}
+--- !u!114 &-5839704568433406198
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2689602071572206800}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9dac0d27ec6af324faf2b6c5f03895b7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: CraftSharp.App::CraftSharp.Rendering.EntityMaterialAssigner
+  m_MaterialEntries:
+  - RenderType: 0
+    m_DefaultMaterial: {fileID: 2100000, guid: 4c85d187070a73a4dab748d8fb723ad7, type: 2}
+    TextureId: builtin:blank
+    m_Renderers:
+    - {fileID: 8177037134279263917}
 --- !u!1 &2716930875251792988
 GameObject:
   m_ObjectHideFlags: 0

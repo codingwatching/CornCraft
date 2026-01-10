@@ -143,5 +143,10 @@ namespace CraftSharp.Rendering
         {
             return $"{GetTimeStringFromTicks(ticks)} ({ticks} / {lastRecTicks})";
         }
+
+        public override void SetFogEnabled(bool enable)
+        {
+            heightFog.enabled = enable;
+        }
     }
 }

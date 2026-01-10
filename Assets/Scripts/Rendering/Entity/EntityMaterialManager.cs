@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -17,23 +16,12 @@ namespace CraftSharp.Rendering
         private const string BEDROCK_ENTITY_NAMESPACE = "bedrock_entity";
         private const string SKIN_NAMESPACE = "skin";
         private static readonly int BASE_MAP = Shader.PropertyToID("_BaseMap");
-        
-        [SerializeField] private Color m_EntityBaseColor = new(220F / 255F, 220F / 255F, 220F / 255F);
-        public Color EntityBaseColor => m_EntityBaseColor;
-        [SerializeField] private Material m_EntityDissolveMaterial;
-        public Material EntityDissolveMaterial => m_EntityDissolveMaterial;
-        [SerializeField] private string m_EntityDissolveMaterialTextureName = "_Texture";
-        public string EntityDissolveMaterialTextureName => m_EntityDissolveMaterialTextureName;
-        [SerializeField] private string m_EntityDissolveMaterialColorName = "_Colour";
-        public string EntityDissolveMaterialColorName => m_EntityDissolveMaterialColorName;
 
-        public Material BedrockEntitySolid;
-        public Material BedrockEntityCutout;
-        public Material BedrockEntityCutoutDoubleSided;
-        public Material BedrockEntityTranslucent;
+        [SerializeField] private EntityMaterialPreset entityMaterialPreset;
+        public EntityMaterialPreset EntityMaterialPreset => entityMaterialPreset;
 
         /// <summary>
-        /// A material instance is created for each rendertype-texture pair,
+        /// A material instance is created for each render type-texture pair,
         /// and all entities that uses this material share the same instance.
         /// This helps to avoid unnecessary copies of materials and makes
         /// texture updates much easier.
@@ -69,8 +57,7 @@ namespace CraftSharp.Rendering
                     {
                         // Read and apply textures from ResourcePackManager
                         mainTexture = tex,
-                        name = $"Material {textureId} ({renderType})",
-                        color = EntityBaseColor
+                        name = $"Material {textureId} ({renderType})"
                     };
 
                     material.SetTexture(BASE_MAP, tex);
@@ -91,13 +78,28 @@ namespace CraftSharp.Rendering
         /// <param name="renderType">Render type of this material</param>
         /// <param name="textureName">Texture name</param>
         /// <param name="callback">Callback to be invoked after applying the material</param>
+        /// <param name="expectedWidth">Expected texture width, used for Bedrock entity model textures</param>
+        /// <param name="expectedHeight">Expected texture height, used for Bedrock entity model textures</param>
+        public void ApplyMaterial(EntityRenderType renderType, ResourceLocation textureId,
+            Action<Material> callback, int expectedWidth = 0, int expectedHeight = 0)
+        {
+            ApplyMaterial(renderType, textureId,
+                GetEntityMaterialTemplate(renderType), callback, expectedWidth, expectedHeight);
+        }
+        
+        /// <summary>
+        /// Map a material to an instance in the global entity material table.
+        /// </summary>
+        /// <param name="renderType">Render type of this material</param>
+        /// <param name="textureName">Texture name</param>
+        /// <param name="callback">Callback to be invoked after applying the material</param>
         /// <param name="expectedWidth">Texture width defined in Bedrock geometry file</param>
         /// <param name="expectedHeight">Texture height defined in Bedrock geometry file</param>
         public void ApplyBedrockMaterial(EntityRenderType renderType, string textureName,
             Action<Material> callback, int expectedWidth, int expectedHeight)
         {
             ApplyMaterial(renderType, new(BEDROCK_ENTITY_NAMESPACE, textureName),
-                GetBedrockEntityMaterialTemplate(renderType), callback, expectedWidth, expectedHeight);
+                GetEntityMaterialTemplate(renderType), callback, expectedWidth, expectedHeight);
         }
 
         /// <summary>
@@ -508,21 +510,21 @@ namespace CraftSharp.Rendering
             }
         }
 
-        private Material GetBedrockEntityMaterialTemplate(EntityRenderType renderType)
+        private Material GetEntityMaterialTemplate(EntityRenderType renderType)
         {
             return renderType switch
             {
-                EntityRenderType.SOLID          => BedrockEntitySolid,
-                EntityRenderType.CUTOUT         => BedrockEntityCutout,
-                EntityRenderType.CUTOUT_CULLOFF => BedrockEntityCutoutDoubleSided,
-                EntityRenderType.TRANSLUCENT    => BedrockEntityTranslucent,
+                EntityRenderType.SOLID          => entityMaterialPreset.EntitySolid,
+                EntityRenderType.CUTOUT         => entityMaterialPreset.EntityCutout,
+                EntityRenderType.CUTOUT_CULLOFF => entityMaterialPreset.EntityCutoutDoubleSided,
+                EntityRenderType.TRANSLUCENT    => entityMaterialPreset.EntityTranslucent,
 
-                EntityRenderType.SOLID_EMISSIVE          => BedrockEntitySolid,
-                EntityRenderType.CUTOUT_EMISSIVE         => BedrockEntityCutout,
-                EntityRenderType.CUTOUT_CULLOFF_EMISSIVE => BedrockEntityCutoutDoubleSided,
-                EntityRenderType.TRANSLUCENT_EMISSIVE    => BedrockEntityTranslucent,
+                EntityRenderType.SOLID_EMISSIVE          => entityMaterialPreset.EntitySolid,
+                EntityRenderType.CUTOUT_EMISSIVE         => entityMaterialPreset.EntityCutout,
+                EntityRenderType.CUTOUT_CULLOFF_EMISSIVE => entityMaterialPreset.EntityCutoutDoubleSided,
+                EntityRenderType.TRANSLUCENT_EMISSIVE    => entityMaterialPreset.EntityTranslucent,
 
-                _ =>                            BedrockEntitySolid
+                _ => entityMaterialPreset.EntitySolid
             };
         }
 

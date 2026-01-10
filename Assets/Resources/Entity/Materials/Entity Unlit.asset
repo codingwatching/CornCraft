@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5d71eb10a5d494240b050cccd043ab55, type: 3}
+  m_Name: Entity Unlit
+  m_EditorClassIdentifier: CraftSharp.App::CraftSharp.Rendering.EntityMaterialPreset
+  EntitySolid: {fileID: 2100000, guid: 8c90616513b8abf44860c94dfedeaa4c, type: 2}
+  EntityCutout: {fileID: 2100000, guid: 3f94930463b1eff4a8280b43b816580f, type: 2}
+  EntityCutoutDoubleSided: {fileID: 2100000, guid: cfdf23474a5e2a046b8f141d979fc86d, type: 2}
+  EntityTranslucent: {fileID: 2100000, guid: 1395a03b4c1e20a44b12630a14000338, type: 2}
