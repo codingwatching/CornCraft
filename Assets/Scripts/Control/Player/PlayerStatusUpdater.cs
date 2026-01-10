@@ -7,7 +7,7 @@ namespace CraftSharp.Control
 {
     public class PlayerStatusUpdater : MonoBehaviour
     {
-        public const float ABOVE_LIQUID_HEIGHT_WHEN_FLOATING = 0.75F;
+        public const float ABOVE_LIQUID_HEIGHT_WHEN_FLOATING = 1F;
         private const float GROUND_CHECK_TOLERANCE = 1E-2F; // Allow slight penetration/float
         private const float MOVEMENT_EPSILON = 1E-4F; // Threshold to consider movement negligible
         private const float MAX_STEP_HEIGHT = 0.125F;
@@ -96,13 +96,12 @@ namespace CraftSharp.Control
             var steppingLimit = HIGH_STEP_MAX_HEIGHT - Status.GroundDistFromFeet;
 
             // Special handling: If player is currently in/above liquid, don't
-            // use GroundDistFromFeet (because the liquid can support them)
+            // use GroundDistFromFeet (because the liquid can support them) and
+            // use a higher stepping limit (for walking up a block)
             if (Status.LiquidDistFromHead < dimensions.LiquidRaycastDist)
             {
-                steppingLimit = HIGH_STEP_MAX_HEIGHT;
+                steppingLimit = 1F;
             }
-
-            var velocityBeforeStepping = velocity;
 
             var newPosition = CalculateNewPlayerPosition(transform.position, offset, movementForward,
                 steppingLimit, isSneaking, terrainAABBs, dimensions,
@@ -239,25 +238,28 @@ namespace CraftSharp.Control
                 if (!TryFindStepSurface(horizontalOffset, moveDir, out var targetSurfaceY, out var desiredLift))
                     return;
                 
-                //Debug.Log($"Desired lift: {desiredLift} (Target height: {targetSurfaceY})");
+                // Debug.Log($"Desired lift: {desiredLift} (Target height: {targetSurfaceY})");
 
                 if (desiredLift > steppingLimit)
                 {
-                    //Debug.Log("Cancelled stepping due to height limit");
+                    // Debug.Log("Cancelled stepping due to height limit");
                     return;
                 }
 
                 switch (desiredLift)
                 {
-                    case <= GROUND_CHECK_TOLERANCE:
+                    case < GROUND_CHECK_TOLERANCE:
                         return;
-                    // Short steps are climbed in one frame, taller steps inch upward until reached
                     case <= MAX_STEP_HEIGHT + GROUND_CHECK_TOLERANCE:
                         effectiveOffset.y = desiredLift; // snap directly onto the surface
                         finishedStepping = true;
                         return;
-                    case > HIGH_STEP_MAX_HEIGHT + GROUND_CHECK_TOLERANCE:
-                        return;
+                }
+
+                // Too high, can't step up
+                if (desiredLift > Mathf.Max(HIGH_STEP_MAX_HEIGHT, steppingLimit) + GROUND_CHECK_TOLERANCE)
+                {
+                    return;
                 }
 
                 var incrementalLift = Mathf.Min(HIGH_STEP_LIFT_AMOUNT, desiredLift);
@@ -271,7 +273,7 @@ namespace CraftSharp.Control
                     duringStepping = true;
 
                 effectiveOffset.y = incrementalLift; // climb part-way this frame
-                //Debug.Log($"Incremental lift: {incrementalLift}");
+                // Debug.Log($"Incremental lift: {incrementalLift}");
             }
 
             bool TryFindStepSurface(Vector3 horizontalOffset, Vector3 moveDir, out float stepTargetY, out float stepLift)
@@ -304,7 +306,7 @@ namespace CraftSharp.Control
 
                     var surfaceY = aabb.Max.y;
                     if (surfaceY <= currentFeet.y + GROUND_CHECK_TOLERANCE ||
-                        surfaceY > currentFeet.y + HIGH_STEP_MAX_HEIGHT + GROUND_CHECK_TOLERANCE)
+                        surfaceY > currentFeet.y + Mathf.Max(HIGH_STEP_MAX_HEIGHT, steppingLimit) + GROUND_CHECK_TOLERANCE)
                         continue;
                     var liftAmount = surfaceY - currentFeet.y;
 

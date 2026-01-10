@@ -186,7 +186,7 @@ namespace CraftSharp.Control
 
                     if (info.GroundDistFromFeet <= 0.6F && player.CurrentVelocity.y < 0F)
                     {
-                        Debug.Log("Requested jump before landing");
+                        // Debug.Log("Requested jump before landing");
                         info.JumpRequested = true;
                     }
                 }
