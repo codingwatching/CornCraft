@@ -130,14 +130,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5a68db3fa1c027d41bcc5a863cebd32f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  AtlasSolid: {fileID: 2100000, guid: 14c6bc8a8f8380d4f91066b493db8705, type: 2}
-  AtlasCutout: {fileID: 2100000, guid: 9799fbe4314dcb04a95084e6b0a1626f, type: 2}
-  AtlasCutoutMipped: {fileID: 2100000, guid: 356fe3b2c3144ef4f82484e1a7bebe4e, type: 2}
-  AtlasTranslucent: {fileID: 2100000, guid: 6721cc8fabad23b45b323d5ddcccad2b, type: 2}
-  StylizedWater: {fileID: 2100000, guid: 002453dd655f38e42968cf609e04ee33, type: 2}
-  AtlasUnlit: {fileID: 2100000, guid: 260d37673b405164d8482f4da4ec2809, type: 2}
-  Foliage: {fileID: 2100000, guid: adf0649238070f449b01459c6e16a664, type: 2}
-  Plants: {fileID: 2100000, guid: 4962df059f7094841bc40cc6d1ab4d5d, type: 2}
+  chunkMaterialPreset: {fileID: 11400000, guid: 36e4517e682cec145805e68768e0fcfb, type: 2}
 --- !u!114 &2547929878768547576
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1185,7 +1178,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 390473801096230046, guid: 3d95787b0db43f049bba22afe2b0b90e, type: 3}
       propertyPath: m_fontSize
-      value: 35.9
+      value: 35
       objectReference: {fileID: 0}
     - target: {fileID: 411776170313800663, guid: 3d95787b0db43f049bba22afe2b0b90e, type: 3}
       propertyPath: m_AnchorMax.y
@@ -1469,7 +1462,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1548419857005476720, guid: 3d95787b0db43f049bba22afe2b0b90e, type: 3}
       propertyPath: m_fontSize
-      value: 46.6
+      value: 45.45
       objectReference: {fileID: 0}
     - target: {fileID: 1597046326892836254, guid: 3d95787b0db43f049bba22afe2b0b90e, type: 3}
       propertyPath: m_Value
@@ -1489,7 +1482,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1705951893526614793, guid: 3d95787b0db43f049bba22afe2b0b90e, type: 3}
       propertyPath: m_fontSize
-      value: 35.9
+      value: 35
       objectReference: {fileID: 0}
     - target: {fileID: 1727646506984429795, guid: 3d95787b0db43f049bba22afe2b0b90e, type: 3}
       propertyPath: m_AnchorMax.y
@@ -1681,7 +1674,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3621640533663428678, guid: 3d95787b0db43f049bba22afe2b0b90e, type: 3}
       propertyPath: m_fontSize
-      value: 46.6
+      value: 45.45
       objectReference: {fileID: 0}
     - target: {fileID: 3850850348760909226, guid: 3d95787b0db43f049bba22afe2b0b90e, type: 3}
       propertyPath: m_AnchorMax.x
@@ -1741,7 +1734,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4051555152798750997, guid: 3d95787b0db43f049bba22afe2b0b90e, type: 3}
       propertyPath: m_fontSize
-      value: 35.9
+      value: 35
       objectReference: {fileID: 0}
     - target: {fileID: 4116231945711108716, guid: 3d95787b0db43f049bba22afe2b0b90e, type: 3}
       propertyPath: m_SizeDelta.y
@@ -1841,7 +1834,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4526179069394025124, guid: 3d95787b0db43f049bba22afe2b0b90e, type: 3}
       propertyPath: m_fontSize
-      value: 35.9
+      value: 35
       objectReference: {fileID: 0}
     - target: {fileID: 4550128676225257676, guid: 3d95787b0db43f049bba22afe2b0b90e, type: 3}
       propertyPath: m_AnchorMax.y
@@ -1897,7 +1890,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4657611282222550069, guid: 3d95787b0db43f049bba22afe2b0b90e, type: 3}
       propertyPath: m_fontSize
-      value: 46.6
+      value: 45.45
       objectReference: {fileID: 0}
     - target: {fileID: 4857621690520423189, guid: 3d95787b0db43f049bba22afe2b0b90e, type: 3}
       propertyPath: m_AnchorMax.y
@@ -2389,7 +2382,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7299574259987197818, guid: 3d95787b0db43f049bba22afe2b0b90e, type: 3}
       propertyPath: m_fontSize
-      value: 35.9
+      value: 35
       objectReference: {fileID: 0}
     - target: {fileID: 7334470615264588308, guid: 3d95787b0db43f049bba22afe2b0b90e, type: 3}
       propertyPath: m_SizeDelta.y

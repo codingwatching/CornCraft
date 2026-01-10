@@ -7,14 +7,9 @@ namespace CraftSharp.Rendering
 {
     public class ChunkMaterialManager : MonoBehaviour
     {
-        public Material AtlasSolid;
-        public Material AtlasCutout;
-        public Material AtlasCutoutMipped;
-        public Material AtlasTranslucent;
-        public Material StylizedWater;
-        public Material AtlasUnlit;
-        public Material Foliage;
-        public Material Plants;
+        private static readonly int BASE_MAP_HASH = Shader.PropertyToID("_BaseMap");
+        
+        [SerializeField] private ChunkMaterialPreset chunkMaterialPreset;
 
         private readonly Dictionary<RenderType, Material> atlasMaterials = new();
         private readonly Dictionary<RenderType, Material> inventoryMaterials = new();
@@ -46,48 +41,48 @@ namespace CraftSharp.Rendering
             var packManager = ResourcePackManager.Instance;
 
             // Solid
-            var solid = new Material(AtlasSolid);
-            solid.SetTexture("_BaseMap", packManager.GetAtlasArray(true));
+            var solid = new Material(chunkMaterialPreset.AtlasSolid);
+            solid.SetTexture(BASE_MAP_HASH, packManager.GetAtlasArray(true));
             atlasMaterials.Add(RenderType.SOLID, solid);
 
             defaultAtlasMaterial = solid;
 
             // Cutout & Cutout Mipped
-            var cutout = new Material(AtlasCutout);
-            cutout.SetTexture("_BaseMap", packManager.GetAtlasArray(false));
+            var cutout = new Material(chunkMaterialPreset.AtlasCutout);
+            cutout.SetTexture(BASE_MAP_HASH, packManager.GetAtlasArray(false));
             atlasMaterials.Add(RenderType.CUTOUT, cutout);
 
-            var cutoutMipped = new Material(AtlasCutoutMipped);
-            cutoutMipped.SetTexture("_BaseMap", packManager.GetAtlasArray(true));
+            var cutoutMipped = new Material(chunkMaterialPreset.AtlasCutoutMipped);
+            cutoutMipped.SetTexture(BASE_MAP_HASH, packManager.GetAtlasArray(true));
             atlasMaterials.Add(RenderType.CUTOUT_MIPPED, cutoutMipped);
 
             // Translucent
-            var translucent = new Material(AtlasTranslucent);
-            translucent.SetTexture("_BaseMap", packManager.GetAtlasArray(true));
+            var translucent = new Material(chunkMaterialPreset.AtlasTranslucent);
+            translucent.SetTexture(BASE_MAP_HASH, packManager.GetAtlasArray(true));
             atlasMaterials.Add(RenderType.TRANSLUCENT, translucent);
             
             // Unlit
-            var unlit = new Material(AtlasUnlit);
-            unlit.SetTexture("_BaseMap", packManager.GetAtlasArray(true));
+            var unlit = new Material(chunkMaterialPreset.UnlitCutout);
+            unlit.SetTexture(BASE_MAP_HASH, packManager.GetAtlasArray(true));
             atlasMaterials.Add(RenderType.UNLIT, unlit);
 
             // Water
-            var water = new Material(StylizedWater);
-            //water.SetTexture("_BaseMap", packManager.GetAtlasArray(false));
+            var water = new Material(chunkMaterialPreset.Water);
+            //water.SetTexture(BASE_MAP_HASH, packManager.GetAtlasArray(false));
             atlasMaterials.Add(RenderType.WATER, water);
 
             // Foliage
-            var foliage = new Material(Foliage);
-            foliage.SetTexture("_BaseMap", packManager.GetAtlasArray(true));
+            var foliage = new Material(chunkMaterialPreset.Foliage);
+            foliage.SetTexture(BASE_MAP_HASH, packManager.GetAtlasArray(true));
             atlasMaterials.Add(RenderType.FOLIAGE, foliage);
 
             // Plants & Tall Plants
-            var plants = new Material(Plants);
-            plants.SetTexture("_BaseMap", packManager.GetAtlasArray(false));
+            var plants = new Material(chunkMaterialPreset.Plants);
+            plants.SetTexture(BASE_MAP_HASH, packManager.GetAtlasArray(false));
             atlasMaterials.Add(RenderType.PLANTS, plants);
 
-            var tallPlants = new Material(Plants);
-            tallPlants.SetTexture("_BaseMap", packManager.GetAtlasArray(false));
+            var tallPlants = new Material(chunkMaterialPreset.Plants);
+            tallPlants.SetTexture(BASE_MAP_HASH, packManager.GetAtlasArray(false));
             atlasMaterials.Add(RenderType.TALL_PLANTS, tallPlants);
 
             // Inventory Solid
