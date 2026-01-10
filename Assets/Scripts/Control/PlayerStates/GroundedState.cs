@@ -52,7 +52,7 @@ namespace CraftSharp.Control
 
                 // Apply vertical and horizontal velocity
                 moveVelocity = info.Moving ? player.GetMovementOrientation() * Vector3.forward * moveSpeed : currentVelocity * 0.5F;
-                moveVelocity.y = 10F;
+                moveVelocity.y = 9F;
 
                 // Debug.Log($"Grounded jump: Ground dist: {info.GroundDistFromFeet}, Velocity: {player.CurrentVelocity}");
                 
