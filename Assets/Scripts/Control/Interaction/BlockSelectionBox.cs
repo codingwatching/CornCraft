@@ -164,8 +164,8 @@ namespace CraftSharp.Control
             currentBoxCount = aabbs.Length;
         }
         
-        public void UpdatePredictedMesh(BlockState blockState, float3 posOffset, int cullFlags, int colorInt,
-            byte blockLight, int geometryVariant, Func<RenderType, Material> materialGetter)
+        public void UpdatePredictedMesh(BlockState blockState, float3 posOffset, long randomSeed, int cullFlags,
+            int colorInt, byte blockLight, Func<RenderType, Material> materialGetter)
         {
             if (predictedBlockState == blockState) return;
             predictedBlockState = blockState;
@@ -179,7 +179,7 @@ namespace CraftSharp.Control
             if (predictedBlockState is not null)
             {
                 var (predictedMesh, predictedRenderType) = BlockMeshBuilder.BuildBlockMesh(predictedBlockState,
-                    posOffset, cullFlags, colorInt, blockLight, geometryVariant, 0, false);
+                    posOffset, randomSeed, cullFlags, colorInt, blockLight, 0, false);
                 predictedBlockMesh = predictedMesh;
                 predictedMeshFilter.sharedMesh = predictedBlockMesh;
                 predictedMeshRenderer.sharedMaterial = materialGetter(predictedRenderType);

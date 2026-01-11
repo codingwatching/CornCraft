@@ -312,11 +312,11 @@ namespace CraftSharp.Control
                 blockSelectionBox.transform.position += (Vector3) posOffset;
             }
             
-            var geometryVariant = (newBlockLoc.X  & 0xF) + (newBlockLoc.Y & 0xF) + (newBlockLoc.Z & 0xF) + 3;
+            var geometryVariant = (newBlockLoc.X  & 0xF) + (newBlockLoc.Y & 0xF) + (newBlockLoc.Z & 0xF);
 
             var colorInt = client.ChunkRenderManager.GetBlockColor(predictedStateId, newBlockLoc);
-            blockSelectionBox.UpdatePredictedMesh(predictedBlockState, applyOffsetOnBox ? float3.zero : posOffset, 0b111111, 
-                colorInt, client.ChunkRenderManager.GetBlockLight(newBlockLoc), geometryVariant, rt => client.ChunkMaterialManager.GetAtlasMaterial(rt));
+            blockSelectionBox.UpdatePredictedMesh(predictedBlockState, applyOffsetOnBox ? float3.zero : posOffset, newBlockLoc.GetSeed(), 0b111111,
+                colorInt, client.ChunkRenderManager.GetBlockLight(newBlockLoc), rt => client.ChunkMaterialManager.GetAtlasMaterial(rt));
 
             EventManager.Instance.Broadcast(new TargetBlockLocUpdateEvent(newBlockLoc));
         }

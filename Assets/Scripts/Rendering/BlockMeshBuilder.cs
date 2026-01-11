@@ -5,7 +5,6 @@ using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-using CraftSharp;
 using CraftSharp.Resource;
 using Object = UnityEngine.Object;
 
@@ -17,6 +16,8 @@ namespace CraftSharp.Rendering
         
         private static readonly float[] FULL_CORNER_LIGHTS = Enumerable.Repeat(1F, 8).ToArray();
         private static readonly byte[] FLUID_HEIGHTS = Enumerable.Repeat((byte) 15, 9).ToArray();
+        
+        private static readonly LegacyRandomSource randomSource = new(0L);
         
         private static void ClearBlockVisual(GameObject modelObject)
         {
@@ -91,7 +92,7 @@ namespace CraftSharp.Rendering
         /// <summary>
         /// Build block mesh.
         /// </summary>
-        public static (Mesh, RenderType) BuildBlockMesh(BlockState blockState, float3 posOffset, int cullFlags, int colorInt, byte blockLight, int variant, int waterColorInt, bool includeLiquidMesh)
+        public static (Mesh, RenderType) BuildBlockMesh(BlockState blockState, float3 posOffset, long randomSeed, int cullFlags, int colorInt, byte blockLight, int waterColorInt, bool includeLiquidMesh)
         {
             var packManager = ResourcePackManager.Instance;
             var stateId = BlockStatePalette.INSTANCE.GetNumIdByObject(blockState);
@@ -102,7 +103,8 @@ namespace CraftSharp.Rendering
 
             // Get and build chosen variant
             var models = stateModel.Geometries;
-            var chosen = variant % models.Length;
+            randomSource.SetSeed(randomSeed);
+            var chosen = ModuloUtil.Modulo(Mathf.Abs((int) randomSource.NextLong()), models.Length);
             var blockGeometry = models[chosen];
 
             var mesh = BuildBlockMesh_Internal(blockState, blockGeometry, posOffset, cullFlags, colorInt, waterColorInt, blockLight, includeLiquidMesh);

@@ -54,6 +54,8 @@ namespace CraftSharp.Rendering
         private static readonly ResourceLocation BUBBLE_COLUMN_ID = new("bubble_column");
         
         private ChunkRenderBuilderSettings builderSettings;
+        
+        private static readonly LegacyRandomSource randomSource = new(0L);
 
         public ChunkRenderBuilder(Dictionary<int, BlockStateModel> modelTable, ChunkRenderBuilderSettings builderSettings)
         {
@@ -190,7 +192,8 @@ namespace CraftSharp.Rendering
                                 var layerIndex = ChunkRender.TypeIndex(modelTable[stateId].RenderType);
 
                                 var models = modelTable[stateId].Geometries;
-                                var chosen = (x + y + z) % models.Length;
+                                randomSource.SetSeed(data.OriginBlockLoc.WithOffset(x - 1, y - 1, z - 1).GetSeed());
+                                var chosen = ModuloUtil.Modulo(Mathf.Abs((int) randomSource.NextLong()), models.Length);
 
                                 if (state.NoCollision)
                                 {
@@ -285,7 +288,8 @@ namespace CraftSharp.Rendering
                                 }
 
                                 var models = modelTable[stateId].Geometries;
-                                var chosen = (x + y + z) % models.Length;
+                                randomSource.SetSeed(data.OriginBlockLoc.WithOffset(blocX, blocY, blocZ).GetSeed());
+                                var chosen = ModuloUtil.Modulo(Mathf.Abs((int) randomSource.NextLong()), models.Length);
                                 var color  = ColorConvert.GetFloat3(allColors[blocX, blocY, blocZ]);
                                 var lights = getCornerLights(x, y, z);
                                 var aoMask = getNeighborCastAOMask(x, y, z);
