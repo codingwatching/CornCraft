@@ -7,5 +7,3 @@
   - 安装后，使用 <kbd>CornCraft\Water Asset Utils\Generate SW3 Dynamic Color Assets</kbd> 来生成支持生物群系颜色的水体着色器文件
 
 - [**Atmospheric Height Fog**](https://assetstore.unity.com/packages/vfx/shaders/fullscreen-camera-effects/atmospheric-height-fog-optimized-fog-for-consoles-mobile-and-vr-143825): 提供体积雾，可以不要。
-
-- [**HoloDissolveFX**](https://assetstore.unity.com/packages/p/holodissolvefx-holograms-dissolve-urp-251841): 实体溶解着色器。
