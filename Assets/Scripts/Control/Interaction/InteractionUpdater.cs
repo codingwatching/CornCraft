@@ -282,6 +282,76 @@ namespace CraftSharp.Control
             return false;
         }
 
+        private bool CheckBlockPlacementValidity(BlockLoc blockLoc, BlockState blockState)
+        {
+            if (!client || blockState.NoCollision) return true;
+
+            // Get all AABBs from the block state (use ColliderAABBs if available, otherwise AABBs)
+            var blockAABBs = blockState.Shape.ColliderAABBs ?? blockState.Shape.AABBs;
+            if (blockAABBs.Count == 0) return true; // No collision AABBs, placement is valid
+            
+            // Get nearby entities including the client player
+            var entityRenderManager = client.EntityRenderManager;
+            var nearbyEntityIds = entityRenderManager.GetNearbyEntityIds();
+            
+            // Also include the client player entity
+            var clientEntityRender = entityRenderManager.GetEntityRender(BaseCornClient.CLIENT_ENTITY_ID_INTERNAL);
+
+            var worldPositionOffset = CoordConvert.GetPosDelta(client.WorldOriginOffset);
+            
+            // Check each block AABB against all entity AABBs
+            foreach (var blockAABB in blockAABBs)
+            {
+                // Convert block AABB to world space (Minecraft coordinates)
+                // Block AABBs are in block-local coordinates (0-1 range), add block location
+                var worldBlockAABB = new ShapeAABB(
+                    blockAABB.MinX + blockLoc.X + worldPositionOffset.z,
+                    blockAABB.MinY + blockLoc.Y + worldPositionOffset.y,
+                    blockAABB.MinZ + blockLoc.Z + worldPositionOffset.x,
+                    blockAABB.MaxX + blockLoc.X + worldPositionOffset.z,
+                    blockAABB.MaxY + blockLoc.Y + worldPositionOffset.y,
+                    blockAABB.MaxZ + blockLoc.Z + worldPositionOffset.x
+                );
+
+                // Check against client player entity
+                if (clientEntityRender)
+                {
+                    var playerAABB = clientEntityRender.GetAABB();
+
+                    // Debug.Log($"Checking against client player entity: {clientEntityRender.Name}, {playerAABB.MinX}, {playerAABB.MinY}, {playerAABB.MinZ}, {playerAABB.MaxX}, {playerAABB.MaxY}, {playerAABB.MaxZ}");
+                    // Debug.Log($"World block AABB: {worldBlockAABB.MinX}, {worldBlockAABB.MinY}, {worldBlockAABB.MinZ}, {worldBlockAABB.MaxX}, {worldBlockAABB.MaxY}, {worldBlockAABB.MaxZ}");
+
+                    if (AABBsOverlap(worldBlockAABB, playerAABB))
+                    {
+                        return false; // Overlaps with player
+                    }
+                }
+
+                // Check against all nearby entities
+                foreach (var entityId in nearbyEntityIds.Keys)
+                {
+                    var entityRender = entityRenderManager.GetEntityRender(entityId);
+                    if (!entityRender || entityRender.IsClientEntity) continue; // Skip if null or already checked client entity
+                    
+                    var entityAABB = entityRender.GetAABB();
+                    if (AABBsOverlap(worldBlockAABB, entityAABB))
+                    {
+                        return false; // Overlaps with entity
+                    }
+                }
+            }
+
+            return true; // No overlaps found
+        }
+
+        private static bool AABBsOverlap(ShapeAABB a, ShapeAABB b)
+        {
+            // Two AABBs overlap if they overlap on all three axes
+            return a.MinX < b.MaxX && a.MaxX > b.MinX &&
+                   a.MinY < b.MaxY && a.MaxY > b.MinY &&
+                   a.MinZ < b.MaxZ && a.MaxZ > b.MinZ;
+        }
+
         private void UpdateBlockPlacementPrediction(BlockLoc newBlockLoc, ResourceLocation blockId,
             Direction targetDirection, float cameraYaw, float cameraPitch, bool clickedTopHalf, bool replace)
         {
@@ -300,8 +370,6 @@ namespace CraftSharp.Control
             TargetBlockLoc = newBlockLoc;
                 
             blockSelectionBox.transform.position = CoordConvert.MC2Unity(client.WorldOriginOffset, newBlockLoc.ToLocation());
-            blockSelectionBox.UpdateShape(predictedBlockState.Shape, BlockSelectionType.ValidPrediction);
-
             var offsetType = ResourcePackManager.Instance.StateModelTable[predictedStateId].OffsetType;
             var posOffset = ChunkRenderBuilder.GetBlockOffsetInBlock(offsetType,
                 newBlockLoc.X >> 4, newBlockLoc.Z >> 4, newBlockLoc.X & 0xF, newBlockLoc.Z & 0xF);
@@ -311,14 +379,24 @@ namespace CraftSharp.Control
             {
                 blockSelectionBox.transform.position += (Vector3) posOffset;
             }
-            
-            var geometryVariant = (newBlockLoc.X  & 0xF) + (newBlockLoc.Y & 0xF) + (newBlockLoc.Z & 0xF);
 
-            var colorInt = client.ChunkRenderManager.GetBlockColor(predictedStateId, newBlockLoc);
-            blockSelectionBox.UpdatePredictedMesh(predictedBlockState, applyOffsetOnBox ? float3.zero : posOffset, newBlockLoc.GetSeed(), 0b111111,
-                colorInt, client.ChunkRenderManager.GetBlockLight(newBlockLoc), rt => client.ChunkMaterialManager.GetAtlasMaterial(rt));
+            // Check if predicted block placement is valid by checking for AABB overlaps with entities
+            var isValid = CheckBlockPlacementValidity(newBlockLoc, predictedBlockState);
 
-            EventManager.Instance.Broadcast(new TargetBlockLocUpdateEvent(newBlockLoc));
+            if (isValid)
+            {
+                blockSelectionBox.UpdateShape(predictedBlockState.Shape, BlockSelectionType.ValidPrediction);
+
+                var colorInt = client.ChunkRenderManager.GetBlockColor(predictedStateId, newBlockLoc);
+                blockSelectionBox.UpdatePredictedMesh(predictedBlockState, applyOffsetOnBox ? float3.zero : posOffset, newBlockLoc.GetSeed(), 0b111111,
+                    colorInt, client.ChunkRenderManager.GetBlockLight(newBlockLoc), rt => client.ChunkMaterialManager.GetAtlasMaterial(rt));
+
+                EventManager.Instance.Broadcast(new TargetBlockLocUpdateEvent(newBlockLoc));
+            }
+            else
+            {
+                blockSelectionBox.UpdateShape(predictedBlockState.Shape, BlockSelectionType.InvalidPrediction);
+            }
         }
 
         private void UpdateBlockTriggerInteractions(ChunkRenderManager chunksManager)
