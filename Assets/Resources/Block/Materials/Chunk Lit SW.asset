@@ -10,18 +10,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1fe02835cd519b64b95c55248f78f92e, type: 3}
-  m_Name: Chunk Lit
+  m_Name: Chunk Lit SW
   m_EditorClassIdentifier: CraftSharp.App::CraftSharp.Rendering.ChunkMaterialPreset
   AtlasSolid: {fileID: 2100000, guid: 14c6bc8a8f8380d4f91066b493db8705, type: 2}
   AtlasCutout: {fileID: 2100000, guid: 9799fbe4314dcb04a95084e6b0a1626f, type: 2}
   AtlasCutoutMipped: {fileID: 2100000, guid: 9799fbe4314dcb04a95084e6b0a1626f, type: 2}
   AtlasTranslucent: {fileID: 2100000, guid: 6721cc8fabad23b45b323d5ddcccad2b, type: 2}
-  Water: {fileID: 2100000, guid: 24c2b6270eec27e4897983fad211e5cf, type: 2}
+  Water: {fileID: 2100000, guid: 002453dd655f38e42968cf609e04ee33, type: 2}
   UnlitCutout: {fileID: 2100000, guid: 25e3c6a99841a414b8fa6db68554bbc4, type: 2}
   Foliage: {fileID: 2100000, guid: adf0649238070f449b01459c6e16a664, type: 2}
   Plants: {fileID: 2100000, guid: 4962df059f7094841bc40cc6d1ab4d5d, type: 2}
   EnableFog: 1
-  UseAtlasForWater: 1
+  UseAtlasForWater: 0
   ChunkRenderBuilderSettings:
     FoliageVertexDataFormat: 1
     PlantsVertexDataFormat: 2

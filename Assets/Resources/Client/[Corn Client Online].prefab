@@ -188,7 +188,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5a68db3fa1c027d41bcc5a863cebd32f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  chunkMaterialPreset: {fileID: 11400000, guid: 0d96604e8a2bb5d408c0ef39470d350a, type: 2}
+  chunkMaterialPreset: {fileID: 11400000, guid: 36e4517e682cec145805e68768e0fcfb, type: 2}
 --- !u!114 &5810336599918708874
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -201,7 +201,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 39fd12f05531e874595aab9caa997ca4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  entityMaterialPreset: {fileID: 11400000, guid: 7bd181033393a5a4da0cd66ca5ba8ff0, type: 2}
+  entityMaterialPreset: {fileID: 11400000, guid: 2238bc104484ac04a968e88c19ee97a6, type: 2}
 --- !u!114 &2774371546218291109
 MonoBehaviour:
   m_ObjectHideFlags: 0
