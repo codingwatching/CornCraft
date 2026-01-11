@@ -54,8 +54,6 @@ namespace CraftSharp.Rendering
         private static readonly ResourceLocation BUBBLE_COLUMN_ID = new("bubble_column");
         
         private ChunkRenderBuilderSettings builderSettings;
-        
-        private static readonly LegacyRandomSource randomSource = new(0L);
 
         public ChunkRenderBuilder(Dictionary<int, BlockStateModel> modelTable, ChunkRenderBuilderSettings builderSettings)
         {
@@ -156,6 +154,7 @@ namespace CraftSharp.Rendering
                 var allWaters = data.Water;
 
                 var stateTable = BlockStatePalette.INSTANCE;
+                var randomSource = new LegacyRandomSource(0L);
 
                 // Collect vertex count and layer mask before collecting actual vertex data
                 for (var x = 1; x <= Chunk.SIZE; x++) // From 1 to 16, because we have a padding for blocks in adjacent chunks
