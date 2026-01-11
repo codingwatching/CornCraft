@@ -1,6 +1,5 @@
 using UnityEngine;
 using UnityEngine.UI;
-using Unity.Mathematics;
 using TMPro;
 
 using CraftSharp.Event;
@@ -81,6 +80,12 @@ namespace CraftSharp.UI
 
             optionHintText.text = hintText;
             gameObject.name = interactionInfo.HintKey;
+        }
+        
+        public void UpdateWarning(bool showWarning)
+        {
+            optionIconImage.color = showWarning ? Color.gold : Color.white;
+            optionHintText.color = showWarning ? Color.orange : Color.white;
         }
 
         public void UpdateKeyHintText(string keyHint)

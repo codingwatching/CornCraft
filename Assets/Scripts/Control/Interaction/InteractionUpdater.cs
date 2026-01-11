@@ -530,12 +530,12 @@ namespace CraftSharp.Control
                 {
                     if (info.Active)
                     {
-                        EventManager.Instance.Broadcast<InteractionAddEvent>(new(info.Id,
-                            TargetBlockLoc == blockLoc, false, info));
+                        EventManager.Instance.Broadcast(new InteractionAddEvent(info.Id,
+                            TargetBlockLoc == blockLoc, false, false, info));
                     }
                     else
                     {
-                        EventManager.Instance.Broadcast<InteractionRemoveEvent>(new(info.Id));
+                        EventManager.Instance.Broadcast(new InteractionRemoveEvent(info.Id));
                     }
                 }
             }
@@ -549,13 +549,13 @@ namespace CraftSharp.Control
                 
                     if (!defaultTriggerWasActive) // Default trigger was not active before, make it active
                     {
-                        EventManager.Instance.Broadcast<InteractionAddEvent>(new(defaultTriggerInfo.Id,
-                            TargetBlockLoc == blockLoc, false, defaultTriggerInfo));
+                        EventManager.Instance.Broadcast(new InteractionAddEvent(defaultTriggerInfo.Id,
+                            TargetBlockLoc == blockLoc, false, false, defaultTriggerInfo));
                     }
                 }
                 else if (defaultTriggerWasActive) // Got a better one, now remove the default option
                 {
-                    EventManager.Instance.Broadcast<InteractionRemoveEvent>(new(defaultTriggerInfo.Id));
+                    EventManager.Instance.Broadcast(new InteractionRemoveEvent(defaultTriggerInfo.Id));
                 }
             }
         }
@@ -966,10 +966,12 @@ namespace CraftSharp.Control
                 }
 
                 lastHarvestInteractionInfo = newHarvestInteractionInfo;
+                var showWarning = !newHarvestInteractionInfo.UsingProperTool;
 
                 AddInteraction(lastHarvestInteractionInfo.Id, lastHarvestInteractionInfo, info =>
                 {
-                    EventManager.Instance.Broadcast<InteractionAddEvent>(new(info.Id, true, true, info));
+                    EventManager.Instance.Broadcast(new InteractionAddEvent(
+                        info.Id, true, true, showWarning, info));
                 });
             }
         }

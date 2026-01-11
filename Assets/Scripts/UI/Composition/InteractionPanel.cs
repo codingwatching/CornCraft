@@ -62,7 +62,7 @@ namespace CraftSharp.UI
                     return;
                 }
 
-                AddInteractionOption(e.InteractionId, e.AddAndSelect, e.UseProgress, e.Info);
+                AddInteractionOption(e.InteractionId, e.AddAndSelect, e.UseProgress, e.ShowWarning, e.Info);
             };
 
             removeCallback = e =>
@@ -158,7 +158,7 @@ namespace CraftSharp.UI
                 EventManager.Instance.Unregister(targetBlockLocChangeEvent);
         }
 
-        public void AddInteractionOption(int id, bool addAndSelect, bool useProgress, InteractionInfo info)
+        public void AddInteractionOption(int id, bool addAndSelect, bool useProgress, bool showWarning, InteractionInfo info)
         {
             var optionObj = Instantiate(useProgress ? interactionProgressOptionPrefab : interactionOptionPrefab);
             var option = !optionObj ? null : optionObj.GetComponent<InteractionOption>();
@@ -190,6 +190,8 @@ namespace CraftSharp.UI
                         SetSelected(0); // Select the first option
                     }
                 }
+                
+                option.UpdateWarning(showWarning);
 
                 option.UpdateKeyHintText(useProgress ? "keybinding.mouse.lmb" : "X");
 

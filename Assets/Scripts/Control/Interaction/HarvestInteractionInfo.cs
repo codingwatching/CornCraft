@@ -56,20 +56,20 @@ namespace CraftSharp.Control
 
     public sealed class LocalHarvestInteractionInfo : HarvestInteractionInfo
     {
-        private readonly float duration;
-        public float Duration => duration;
+        public float Duration { get; }
+        public bool UsingProperTool { get; }
 
         public LocalHarvestInteractionInfo(int id, Block block, BlockLoc loc, Direction dir, ItemStack? tool, float hardness,
             bool floating, bool grounded, HarvestInteraction def) : base(id, block, loc, dir, def)
         {
-            duration = CalculateDiggingTime(tool, hardness, floating, grounded);
+            (Duration, UsingProperTool) = CalculateDiggingTime(tool, hardness, floating, grounded);
         }
 
-        private float CalculateDiggingTime(ItemStack? itemStack, float hardness, bool underwater, bool onGround)
+        private (float, bool) CalculateDiggingTime(ItemStack? itemStack, float hardness, bool underwater, bool onGround)
         {
             if (hardness < 0F) // Bedrock or something, takes forever to break
             {
-                return float.PositiveInfinity;
+                return (float.PositiveInfinity, false);
             }
 
             var item = itemStack?.ItemType;
@@ -106,12 +106,12 @@ namespace CraftSharp.Control
             damage /= canHarvest ? 30D : 100D;
 
             // Instant breaking
-            if (damage > 1D) return 0F;
+            if (damage > 1D) return (0F, true);
 
             float ticks = (float) Math.Ceiling(1F / damage);
             float seconds = ticks / 20F;
 
-            return seconds;
+            return (seconds, isBestTool);
         }
 
         protected override IEnumerator RunInteraction(BaseCornClient client)
@@ -121,7 +121,7 @@ namespace CraftSharp.Control
 
             float elapsedTime = 0F;
 
-            while (elapsedTime < duration)
+            while (elapsedTime < Duration)
             {
                 if (State == HarvestInteractionState.Cancelled)
                 {
@@ -140,7 +140,7 @@ namespace CraftSharp.Control
                 }
 
                 elapsedTime += Time.deltaTime;
-                Progress = elapsedTime / duration;
+                Progress = elapsedTime / Duration;
 
                 EventManager.Instance.Broadcast(new HarvestInteractionUpdateEvent(Id, block, blockLoc, DiggingStatus.Started, Progress));
 
