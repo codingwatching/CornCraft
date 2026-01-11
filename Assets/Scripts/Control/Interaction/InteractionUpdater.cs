@@ -69,7 +69,6 @@ namespace CraftSharp.Control
             return offsets;
         }
 
-        [SerializeField] private LayerMask blockSelectionLayer;
         [SerializeField] private GameObject? blockSelectionFramePrefab;
         [SerializeField] private GameObject? liquidSelectionFramePrefab;
         [SerializeField] private GameObject? entitySelectionFramePrefab;

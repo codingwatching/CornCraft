@@ -17,10 +17,6 @@ namespace CraftSharp.Rendering
 {
     public class ChunkRenderManager : MonoBehaviour, IChunkRenderManager
     {
-        private const string TERRAIN_BOX_COLLIDER_LAYER_NAME = "TerrainBoxCollider";
-        private const string TERRAIN_MESH_COLLIDER_LAYER_NAME = "TerrainMeshCollider";
-        private const string LIQUID_BOX_COLLIDER_LAYER_NAME = "LiquidBoxCollider";
-
         [SerializeField] private Transform blockEntityParent;
 
         #region GameObject Prefabs for each block entity type
@@ -170,10 +166,7 @@ namespace CraftSharp.Rendering
         private static ChunkRender CreateNewChunkRender()
         {
             // Create a new chunk render object...
-            var chunkObj = new GameObject("Chunk [Pooled]")
-            {
-                layer = LayerMask.NameToLayer(TERRAIN_MESH_COLLIDER_LAYER_NAME)
-            };
+            var chunkObj = new GameObject("Chunk [Pooled]");
             ChunkRender newChunk = chunkObj.AddComponent<ChunkRender>();
 
             return newChunk;
@@ -1179,9 +1172,10 @@ namespace CraftSharp.Rendering
             blockEntityPrefabs.Add(BlockEntityType.HANGING_SIGN_ID,      hangingSignPrefab);
             
             client = CornApp.CurrentClient;
-
+            
+            var chunkMaterialManager = client!.GetComponent<ChunkMaterialManager>();
             var modelTable = ResourcePackManager.Instance.StateModelTable;
-            builder = new(modelTable);
+            builder = new ChunkRenderBuilder(modelTable, chunkMaterialManager.ChunkMaterialPreset.ChunkRenderBuilderSettings);
 
             // AABB lists are initialized as empty lists, no GameObjects needed
 

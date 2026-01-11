@@ -52,10 +52,13 @@ namespace CraftSharp.Rendering
         private static readonly ResourceLocation ICE_BLOCK_ID = new("ice");
         
         private static readonly ResourceLocation BUBBLE_COLUMN_ID = new("bubble_column");
+        
+        private ChunkRenderBuilderSettings builderSettings;
 
-        public ChunkRenderBuilder(Dictionary<int, BlockStateModel> modelTable)
+        public ChunkRenderBuilder(Dictionary<int, BlockStateModel> modelTable, ChunkRenderBuilderSettings builderSettings)
         {
             this.modelTable = modelTable;
+            this.builderSettings = builderSettings;
             var palette = BlockStatePalette.INSTANCE;
             
             cullingRules = new();
@@ -82,7 +85,7 @@ namespace CraftSharp.Rendering
                 cullingRules[stateId] = bubbleColumnNeighborCheck;
         }
 
-        public static float3 GetBlockOffsetInChunk(OffsetType offsetType, int chunkX, int chunkZ, int blocX, int blocY, int blocZ)
+        private static float3 GetBlockOffsetInChunk(OffsetType offsetType, int chunkX, int chunkZ, int blocX, int blocY, int blocZ)
         {
             if (offsetType is OffsetType.XZ or OffsetType.XZ_BoundingBox) // Apply random offset on horizontal directions
             {
@@ -267,18 +270,18 @@ namespace CraftSharp.Rendering
                             {
                                 var renderType = modelTable[stateId].RenderType;
                                 var layerIndex = ChunkRender.TypeIndex(renderType);
-                                var aoIntensity = 0.2F;
+                                var aoIntensity = builderSettings.AOIntensity;
 
                                 var datFormat = BlockGeometry.VertexDataFormat.Color_Light;
                                 if (renderType == RenderType.FOLIAGE)
                                 {
-                                    datFormat = BlockGeometry.VertexDataFormat.Color_Light_BlockNormal;
+                                    datFormat = builderSettings.FoliageVertexDataFormat;
+                                    aoIntensity = builderSettings.FoliageAOIntensity;
                                 }
                                 else if (renderType is RenderType.PLANTS or RenderType.TALL_PLANTS)
                                 {
-                                    datFormat = BlockGeometry.VertexDataFormat.Color_Light_CrossNormal;
-
-                                    aoIntensity = 0.15F;
+                                    datFormat = builderSettings.PlantsVertexDataFormat;
+                                    aoIntensity = builderSettings.PlantsAOIntensity;
                                 }
 
                                 var models = modelTable[stateId].Geometries;

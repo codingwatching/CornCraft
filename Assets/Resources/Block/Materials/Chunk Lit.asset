@@ -20,3 +20,11 @@ MonoBehaviour:
   UnlitCutout: {fileID: 2100000, guid: 25e3c6a99841a414b8fa6db68554bbc4, type: 2}
   Foliage: {fileID: 2100000, guid: adf0649238070f449b01459c6e16a664, type: 2}
   Plants: {fileID: 2100000, guid: 4962df059f7094841bc40cc6d1ab4d5d, type: 2}
+  EnableFog: 1
+  UseAtlasForWater: 0
+  ChunkRenderBuilderSettings:
+    FoliageVertexDataFormat: 1
+    PlantsVertexDataFormat: 2
+    AOIntensity: 0.2
+    FoliageAOIntensity: 0.2
+    PlantsAOIntensity: 0.1

@@ -16,8 +16,15 @@ MonoBehaviour:
   AtlasCutout: {fileID: 2100000, guid: 9799fbe4314dcb04a95084e6b0a1626f, type: 2}
   AtlasCutoutMipped: {fileID: 2100000, guid: 25e3c6a99841a414b8fa6db68554bbc4, type: 2}
   AtlasTranslucent: {fileID: 2100000, guid: da3655279b0b9b64686765503c8b6e85, type: 2}
-  Water: {fileID: 2100000, guid: da3655279b0b9b64686765503c8b6e85, type: 2}
+  Water: {fileID: 2100000, guid: c75ead74332fd9745b73ec1b27eb6d6e, type: 2}
   UnlitCutout: {fileID: 2100000, guid: 25e3c6a99841a414b8fa6db68554bbc4, type: 2}
   Foliage: {fileID: 2100000, guid: 25e3c6a99841a414b8fa6db68554bbc4, type: 2}
   Plants: {fileID: 2100000, guid: 25e3c6a99841a414b8fa6db68554bbc4, type: 2}
   EnableFog: 0
+  UseAtlasForWater: 1
+  ChunkRenderBuilderSettings:
+    FoliageVertexDataFormat: 0
+    PlantsVertexDataFormat: 0
+    AOIntensity: 0.3
+    FoliageAOIntensity: 0.3
+    PlantsAOIntensity: 0

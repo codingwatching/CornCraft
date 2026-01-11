@@ -12,16 +12,16 @@ TagManager:
   - 
   - Water
   - UI
-  - TerrainBoxCollider
-  - TerrainMeshCollider
+  - 
+  - 
   - 
   - Player
   - Entity
   - Environment
-  - Weapon
-  - Ragdoll
-  - LiquidBoxCollider
-  - LiquidMeshCollider
+  - 
+  - 
+  - 
+  - 
   - PostProc
   - CelestiaClouds
   - 3DSprite

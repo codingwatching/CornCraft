@@ -69,7 +69,10 @@ namespace CraftSharp.Rendering
 
             // Water
             var water = new Material(chunkMaterialPreset.Water);
-            //water.SetTexture(BASE_MAP_HASH, packManager.GetAtlasArray(false));
+            if (chunkMaterialPreset.UseAtlasForWater)
+            {
+                water.SetTexture(BASE_MAP_HASH, packManager.GetAtlasArray(true));
+            }
             atlasMaterials.Add(RenderType.WATER, water);
 
             // Foliage

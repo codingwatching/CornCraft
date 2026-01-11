@@ -158,7 +158,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   blockSelectionLayer:
     serializedVersion: 2
-    m_Bits: 64
+    m_Bits: 0
   blockSelectionFramePrefab: {fileID: 149211716324436839, guid: 4a2dc55f29243774b820e2a103ad6ca7, type: 3}
   liquidSelectionFramePrefab: {fileID: 149211716324436839, guid: 4d688a8033579e346bdf093ff0725430, type: 3}
   entitySelectionFramePrefab: {fileID: 149211716324436839, guid: 4d688a8033579e346bdf093ff0725430, type: 3}

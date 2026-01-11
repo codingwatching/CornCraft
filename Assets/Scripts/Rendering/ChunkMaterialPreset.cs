@@ -14,6 +14,9 @@ namespace CraftSharp.Rendering
         public Material Foliage;
         public Material Plants;
 
-        public bool EnableFog = true;
+        public bool EnableFog;
+        public bool UseAtlasForWater;
+        
+        public ChunkRenderBuilderSettings ChunkRenderBuilderSettings;
     }
 }
