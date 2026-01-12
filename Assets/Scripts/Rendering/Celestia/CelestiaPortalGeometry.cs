@@ -5,9 +5,10 @@ namespace CraftSharp.Resource
     public static class CelestiaPortalGeometry
     {
         public static void Build(VertexBuffer buffer, ref uint vertOffset, float3 posOffset, int cullFlags,
-                float3 portalColor, float frameInterval, int frameCount, int framePerLine)
+                int portalColorInt, float frameInterval, int frameCount, int framePerLine)
         {
             uint startOffset = vertOffset;
+            var portalColor = ColorConvert.GetFloat3(portalColorInt);
 
             // Unity                   Minecraft            Top Quad Vertices
             //  A +Z (East)             A +X (East)          v0---v1

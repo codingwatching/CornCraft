@@ -133,17 +133,15 @@ namespace CraftSharp.Rendering
             {
                 if (state.InWater)
                 {
-                    var waterColor = ColorConvert.GetFloat3(waterColorInt);
                     FluidGeometry.Build(visualBuffer, ref vertexOffset, float3.zero, FluidGeometry.LiquidTextures[0], FLUID_HEIGHTS,
-                        cullFlags, blockVertLight, waterColor);
+                        cullFlags, blockVertLight, waterColorInt);
                 }
                 else if (state.InLava)
                     FluidGeometry.Build(visualBuffer, ref vertexOffset, float3.zero, FluidGeometry.LiquidTextures[1], FLUID_HEIGHTS,
-                        cullFlags, blockVertLight, BlockGeometry.DEFAULT_COLOR);
+                        cullFlags, blockVertLight, 0xFFFFFF);
             }
 
-            var blockColor = ColorConvert.GetFloat3(colorInt);
-            geometry.Build(visualBuffer, ref vertexOffset, posOffset, cullFlags, 0, 0F, blockVertLight, blockColor);
+            geometry.Build(visualBuffer, ref vertexOffset, posOffset, cullFlags, 0, 0F, blockVertLight, colorInt);
 
             var triIdxCount = vertexCount / 2 * 3;
 
@@ -255,7 +253,7 @@ namespace CraftSharp.Rendering
             var visualBuffer = new VertexBuffer(vertexCount);
             uint vertexOffset = 0;
             blockGeometry.Build(visualBuffer, ref vertexOffset, posOffset, cullFlags, 0, 0F, FULL_CORNER_LIGHTS,
-                float3.zero, BlockGeometry.VertexDataFormat.ExtraUV_Light);
+                0, BlockGeometry.VertexDataFormat.ExtraUV_Light);
 
             var triIdxCount = vertexCount / 2 * 3;
 

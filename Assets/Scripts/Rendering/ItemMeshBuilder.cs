@@ -107,9 +107,9 @@ namespace CraftSharp.Rendering
                 }
             
                 var tintFunc = ItemPalette.INSTANCE.GetTintRule(itemId);
-                var colors = tintFunc is null ? new float3[] { new(1F, 0F, 0F), new(0F, 0F, 1F), new(0F, 1F, 0F) } : tintFunc.Invoke(itemStack);
-            
-                var mesh = BuildItemMeshAndCache(itemGeometry, itemId, shouldUseCache, colors);
+                int[] tintInts = tintFunc is null ? new int[] { 0xFF0000, 0x0000FF, 0x00FF00 } : tintFunc.Invoke(itemStack);
+
+                var mesh = BuildItemMeshAndCache(itemGeometry, itemId, shouldUseCache, tintInts);
                 if (mesh is not null)
                 {
                     meshFilter.sharedMesh = mesh;
@@ -166,13 +166,13 @@ namespace CraftSharp.Rendering
         /// <summary>
         /// Build item mesh and cache it(if applicable)
         /// </summary>
-        public static Mesh? BuildItemMeshAndCache(ItemGeometry itemGeometry, ResourceLocation itemId, bool shouldUseCache, float3[] colors)
+        public static Mesh? BuildItemMeshAndCache(ItemGeometry itemGeometry, ResourceLocation itemId, bool shouldUseCache, int[] tintInts)
         {
             if (shouldUseCache && DEFAULT_MESH_CACHE.TryGetValue(itemId, out var defaultMesh))
             {
                 return defaultMesh;
             }
-            var mesh = BuildItemMesh(itemGeometry, colors);
+            var mesh = BuildItemMesh(itemGeometry, tintInts);
 
             // Store in cache if applicable
             if (shouldUseCache)
@@ -191,13 +191,13 @@ namespace CraftSharp.Rendering
         /// Build item mesh directly from item geometry. Not recommended because
         /// it doesn't utilize the model cache table.
         /// </summary>
-        public static Mesh BuildItemMesh(ItemGeometry itemGeometry, float3[] colors)
+        public static Mesh BuildItemMesh(ItemGeometry itemGeometry, int[] tintInts)
         {
             
             int vertexCount = itemGeometry.GetVertexCount();
             var visualBuffer = new VertexBuffer(vertexCount);
             uint vertexOffset = 0;
-            itemGeometry.Build(visualBuffer, ref vertexOffset, ITEM_CENTER, colors);
+            itemGeometry.Build(visualBuffer, ref vertexOffset, ITEM_CENTER, tintInts);
 
             int triIdxCount = vertexCount / 2 * 3;
 

@@ -255,10 +255,10 @@ namespace CraftSharp.Rendering
                                     var liquidTexture = FluidGeometry.LiquidTextures[state.InWater ? 0 : 1];
                                     var lights = getCornerLights(x, y, z);
 
-                                    var color = state.InWater ? ColorConvert.GetFloat3(allWaters[blocX, blocY, blocZ]) : new float3(1F);
+                                    var colorInt = state.InWater ? allWaters[blocX, blocY, blocZ] : 0xFFFFFF;
 
                                     FluidGeometry.Build(visualBuffer[liquidLayerIndex], ref vertOffset[liquidLayerIndex], new float3(blocZ, blocY, blocX),
-                                            liquidTexture, liquidHeights, liquidCullFlags, lights, color);
+                                            liquidTexture, liquidHeights, liquidCullFlags, lights, colorInt);
                                 }
                             }
 
@@ -289,7 +289,7 @@ namespace CraftSharp.Rendering
                                 var models = modelTable[stateId].Geometries;
                                 randomSource.SetSeed(data.OriginBlockLoc.WithOffset(blocX, blocY, blocZ).GetSeed());
                                 var chosen = ModuloUtil.Modulo(Mathf.Abs((int) randomSource.NextLong()), models.Length);
-                                var color  = ColorConvert.GetFloat3(allColors[blocX, blocY, blocZ]);
+                                var colorInt = allColors[blocX, blocY, blocZ];
                                 var lights = getCornerLights(x, y, z);
                                 var aoMask = getNeighborCastAOMask(x, y, z);
 
@@ -298,12 +298,12 @@ namespace CraftSharp.Rendering
                                 if (state.NoCollision)
                                 {
                                     models[chosen].Build(visualBuffer[layerIndex], ref vertOffset[layerIndex],
-                                            posOffset , cullFlags, aoMask, aoIntensity, lights, color, datFormat);
+                                            posOffset , cullFlags, aoMask, aoIntensity, lights, colorInt, datFormat);
                                 }
                                 else
                                 {
                                     models[chosen].BuildWithCollider(visualBuffer[layerIndex], ref vertOffset[layerIndex], colliderVerts,
-                                            ref colliderVertOffset, posOffset, cullFlags, aoMask, aoIntensity, lights, color, datFormat);
+                                            ref colliderVertOffset, posOffset, cullFlags, aoMask, aoIntensity, lights, colorInt, datFormat);
                                 }
                             }
                         }
