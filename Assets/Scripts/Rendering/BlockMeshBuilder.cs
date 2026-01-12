@@ -6,7 +6,6 @@ using UnityEngine;
 using UnityEngine.Rendering;
 
 using CraftSharp.Resource;
-using Object = UnityEngine.Object;
 
 namespace CraftSharp.Rendering
 {
@@ -14,7 +13,7 @@ namespace CraftSharp.Rendering
     {
         private static readonly Mesh EMPTY_BLOCK_MESH = new();
         
-        private static readonly float[] FULL_CORNER_LIGHTS = Enumerable.Repeat(1F, 8).ToArray();
+        private static readonly byte[] FULL_CORNER_LIGHTS = Enumerable.Repeat((byte) 15, 8).ToArray();
         private static readonly byte[] FLUID_HEIGHTS = Enumerable.Repeat((byte) 15, 9).ToArray();
         
         private static readonly LegacyRandomSource randomSource = new(0L);
@@ -127,7 +126,7 @@ namespace CraftSharp.Rendering
             var visualBuffer = new VertexBuffer(vertexCount);
 
             uint vertexOffset = 0;
-            var blockVertLight = Enumerable.Repeat((float) blockLight, 8).ToArray();
+            var blockVertLight = Enumerable.Repeat(blockLight, 8).ToArray();
 
             if (includeLiquidMesh)
             {

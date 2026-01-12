@@ -1,14 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-
 using UnityEngine;
 using UnityEngine.Profiling;
 using UnityEngine.Rendering;
 using Unity.Collections;
 using Unity.Mathematics;
 
-using CraftSharp;
 using CraftSharp.Resource;
 using Object = UnityEngine.Object;
 
@@ -298,7 +296,7 @@ namespace CraftSharp.Rendering
                                 if (state.NoCollision)
                                 {
                                     models[chosen].Build(visualBuffer[layerIndex], ref vertOffset[layerIndex],
-                                            posOffset , cullFlags, aoMask, aoIntensity, lights, colorInt, datFormat);
+                                            posOffset, cullFlags, aoMask, aoIntensity, lights, colorInt, datFormat);
                                 }
                                 else
                                 {
@@ -526,9 +524,9 @@ namespace CraftSharp.Rendering
                 return ChunkBuildResult.Succeeded;
 
                 // Value range of each corner light: [0, 15]
-                float[] getCornerLights(int x, int y, int z)
+                byte[] getCornerLights(int x, int y, int z)
                 {
-                    var result = new float[8];
+                    var result = new int[8];
 
                     for (var y_ = 0; y_ < 3; y_++) for (var z_ = 0; z_ < 3; z_++) for (var x_ = 0; x_ < 3; x_++)
                     {
@@ -568,7 +566,7 @@ namespace CraftSharp.Rendering
                         }
                     }
 
-                    return result.Select(f => f / 8F).ToArray();
+                    return result.Select(corner => (byte) Mathf.RoundToInt(corner / 8F)).ToArray();
                 }
 
                 int getCullFlags(int x, int y, int z, BlockState self, BlockNeighborCheck check)

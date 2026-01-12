@@ -1,12 +1,26 @@
-void UnpackExtraVertData_float(float Packed, float3 MeshNormal, out float VertLight, out float3 VertNormal)
+void Unpack_float(float Packed, out float VertBlockLight, out float VertSkyLight)
 {
     int packedInt = (int) Packed;
 
-    int vertLight       = packedInt & 0xFF;        // Lower 8 bits
-    int vertNormalIndex = (packedInt >> 8) & 0x3F; // Higher 6 bits
+    int vertBlockLight  = packedInt & 0xFF;         // Lowest  8 bits
+    int vertSkyLight    = (packedInt >> 8) & 0xFF;  // Middle  8 bits
 
     // Get vertex light value
-    VertLight = vertLight / 17.0;
+    VertBlockLight = vertBlockLight;
+    VertSkyLight = vertSkyLight;
+}
+
+void UnpackWithVertexNormal_float(float Packed, float3 MeshNormal, out float VertBlockLight, out float VertSkyLight, out float3 VertNormal)
+{
+    int packedInt = (int) Packed;
+
+    int vertBlockLight  = packedInt & 0xFF;         // Lowest  8 bits
+    int vertSkyLight    = (packedInt >> 8) & 0xFF;  // Middle  8 bits
+    int vertNormalIndex = (packedInt >> 16) & 0x3F; // Highest 6 bits
+
+    // Get vertex light value
+    VertBlockLight = vertBlockLight;
+    VertSkyLight = vertSkyLight;
 
     if (vertNormalIndex == (int) 0x3F)
     {
