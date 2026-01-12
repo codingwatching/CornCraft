@@ -1059,7 +1059,7 @@
     "m_ObjectId": "1a8e5e0416714513ba514ceb87231dc3",
     "m_Title": "Sample Atlas",
     "m_Position": {
-        "x": -1185.5999755859375,
+        "x": -1185.599853515625,
         "y": -48.79998779296875
     }
 }
@@ -2180,7 +2180,7 @@
     "m_ObjectId": "5524aed75cf64334ad6a83f1832f7aac",
     "m_Title": "Get World Position From Scene Depth",
     "m_Position": {
-        "x": -2338.400146484375,
+        "x": -2338.39990234375,
         "y": 194.4000244140625
     }
 }
@@ -2191,7 +2191,7 @@
     "m_ObjectId": "55b65453468c4f0eb0c8ee4738b49fce",
     "m_Title": "Unpack Vert Data",
     "m_Position": {
-        "x": -522.3999633789063,
+        "x": -522.400146484375,
         "y": -365.5999755859375
     }
 }
@@ -2232,7 +2232,7 @@
     "m_ObjectId": "57282691e76a4453a54a09513ccb6065",
     "m_Title": "Water Depth",
     "m_Position": {
-        "x": -1083.2001953125,
+        "x": -1083.2000732421875,
         "y": 637.60009765625
     }
 }
@@ -2302,7 +2302,7 @@
     "m_Hidden": false,
     "m_ShaderOutputName": "_VertLightMultiplier",
     "m_StageCapability": 3,
-    "m_Value": 0.0,
+    "m_Value": 0.10000000149011612,
     "m_DefaultValue": 0.0,
     "m_Labels": [],
     "m_LiteralMode": false
@@ -3199,7 +3199,7 @@
     "m_Title": "Map [0.525, 1] to [0.95, 0]",
     "m_Position": {
         "x": 202.39990234375,
-        "y": 556.7999877929688
+        "y": 556.800048828125
     }
 }
 
