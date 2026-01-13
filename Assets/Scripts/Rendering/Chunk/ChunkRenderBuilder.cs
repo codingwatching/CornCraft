@@ -618,7 +618,7 @@ namespace CraftSharp.Rendering
                 {
                     if (!self.InLiquid || !neighbor.InLiquid) return false;
                     if (self.InWater) return neighbor.InWater;
-                    if (self.InLava) return neighbor.InLava;
+                    if (self.IsLava) return neighbor.IsLava;
 
                     return self.FluidStateId == neighbor.FluidStateId;
                 }

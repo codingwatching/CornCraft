@@ -135,7 +135,7 @@ namespace CraftSharp.Rendering
                     FluidGeometry.Build(visualBuffer, ref vertexOffset, float3.zero, FluidGeometry.LiquidTextures[0], FluidGeometry.LiquidTextures[2], FULL_LIQUID_HEIGHTS,
                         cullFlags, blockVertLight, waterColorInt);
                 }
-                else if (state.InLava)
+                else if (state.IsLava)
                     FluidGeometry.Build(visualBuffer, ref vertexOffset, float3.zero, FluidGeometry.LiquidTextures[1], FluidGeometry.LiquidTextures[3], FULL_LIQUID_HEIGHTS,
                         cullFlags, blockVertLight, 0xFFFFFF);
             }
@@ -188,7 +188,7 @@ namespace CraftSharp.Rendering
 
             var bounds = new Bounds(new Vector3(0.5F, 0.5F, 0.5F), new Vector3(1F, 1F, 1F));
 
-            if (includeLiquidMesh && state.InLiquid)
+            if (includeLiquidMesh && state.IsLiquid)
             {
                 var fluidTriIdxCount = fluidVertexCount / 2 * 3;
 
