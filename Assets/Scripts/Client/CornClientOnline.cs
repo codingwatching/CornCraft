@@ -725,20 +725,33 @@ namespace CraftSharp
                 var biomeId = ChunkRenderManager.GetBiome(playerBlockLoc).BiomeId;
 
                 // Ray casting debugging
-                string targetInfo;
+                string targetBlockInfo, targetFluidInfo;
+
                 if (interactionUpdater.TargetBlockLoc is not null)
                 {
                     var targetBlockLoc = interactionUpdater.TargetBlockLoc.Value;
                     var targetDirection = interactionUpdater.TargetDirection!.Value;
                     var targetBlock = ChunkRenderManager.GetBlock(targetBlockLoc);
-                    targetInfo = $"Target: {targetBlockLoc} ({targetDirection}) {targetBlock.State}";
+                    targetBlockInfo = $"Target Block: {targetBlockLoc} ({targetDirection}) {targetBlock.State}";
                 }
                 else
                 {
-                    targetInfo = string.Empty;
+                    targetBlockInfo = string.Empty;
                 }
 
-                return baseString + $"\nLoc: {GetCurrentLocation()}\n{PlayerController.GetDebugInfo()}\nDimension: {dimensionId}\nBiome: {biomeId}\n{targetInfo}\nWorld Origin Offset: {WorldOriginOffset}" +
+                if (interactionUpdater.TargetFluidLoc is not null)
+                {
+                    var targetFluidLoc = interactionUpdater.TargetFluidLoc.Value;
+                    var targetDirection = interactionUpdater.TargetDirection!.Value;
+                    var targetFluid = ChunkRenderManager.GetBlock(targetFluidLoc);
+                    targetFluidInfo = $"Target Fluid: {targetFluidLoc} ({targetDirection}) {targetFluid.State.FluidStateId} (Level: {targetFluid.State.LiquidLevel})";
+                }
+                else
+                {
+                    targetFluidInfo = string.Empty;
+                }
+
+                return baseString + $"\nLoc: {GetCurrentLocation()}\n{PlayerController.GetDebugInfo()}\nDimension: {dimensionId}\nBiome: {biomeId}\n{targetBlockInfo}\n{targetFluidInfo}\nWorld Origin Offset: {WorldOriginOffset}" +
                         $"\n{ChunkRenderManager.GetDebugInfo()}\n{EntityRenderManager.GetDebugInfo()}\nServer TPS: {GetLatestServerTps():0.0} (Avg: {GetServerAverageTps():0.0})";
             }
             

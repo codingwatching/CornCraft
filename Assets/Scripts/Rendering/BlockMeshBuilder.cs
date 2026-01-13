@@ -14,7 +14,7 @@ namespace CraftSharp.Rendering
         private static readonly Mesh EMPTY_BLOCK_MESH = new();
         
         private static readonly byte[] FULL_CORNER_LIGHTS = Enumerable.Repeat((byte) 15, 8).ToArray();
-        private static readonly byte[] FLUID_HEIGHTS = Enumerable.Repeat((byte) 15, 9).ToArray();
+        private static readonly float[] FULL_LIQUID_HEIGHTS = { 1F, 1F, 1F, 1F };
         
         private static readonly LegacyRandomSource randomSource = new(0L);
         
@@ -132,11 +132,11 @@ namespace CraftSharp.Rendering
             {
                 if (state.InWater)
                 {
-                    FluidGeometry.Build(visualBuffer, ref vertexOffset, float3.zero, FluidGeometry.LiquidTextures[0], FLUID_HEIGHTS,
+                    FluidGeometry.Build(visualBuffer, ref vertexOffset, float3.zero, FluidGeometry.LiquidTextures[0], FluidGeometry.LiquidTextures[2], FULL_LIQUID_HEIGHTS,
                         cullFlags, blockVertLight, waterColorInt);
                 }
                 else if (state.InLava)
-                    FluidGeometry.Build(visualBuffer, ref vertexOffset, float3.zero, FluidGeometry.LiquidTextures[1], FLUID_HEIGHTS,
+                    FluidGeometry.Build(visualBuffer, ref vertexOffset, float3.zero, FluidGeometry.LiquidTextures[1], FluidGeometry.LiquidTextures[3], FULL_LIQUID_HEIGHTS,
                         cullFlags, blockVertLight, 0xFFFFFF);
             }
 

@@ -248,15 +248,18 @@ namespace CraftSharp.Rendering
 
                                 if (liquidCullFlags != 0)
                                 {
-                                    var liquidHeights = new byte[] { 15, 15, 15, 15, 15, 15, 15, 15, 15 }; // TODO: Implement
+                                    Span<float> liquidHeights = stackalloc float[4];
+                                    getLiquidCornerHeights(state, x, y, z, liquidHeights);
+
                                     var liquidLayerIndex = state.InWater ? WATER_LAYER_INDEX : LAVA_LAYER_INDEX;
-                                    var liquidTexture = FluidGeometry.LiquidTextures[state.InWater ? 0 : 1];
+                                    var liquidTextureStill = FluidGeometry.LiquidTextures[state.InWater ? 0 : 1];
+                                    var liquidTextureFlow  = FluidGeometry.LiquidTextures[state.InWater ? 2 : 3];
                                     var lights = getCornerLights(x, y, z);
 
                                     var colorInt = state.InWater ? allWaters[blocX, blocY, blocZ] : 0xFFFFFF;
 
                                     FluidGeometry.Build(visualBuffer[liquidLayerIndex], ref vertOffset[liquidLayerIndex], new float3(blocZ, blocY, blocX),
-                                            liquidTexture, liquidHeights, liquidCullFlags, lights, colorInt);
+                                            liquidTextureStill, liquidTextureFlow, liquidHeights, liquidCullFlags, lights, colorInt);
                                 }
                             }
 
@@ -567,6 +570,67 @@ namespace CraftSharp.Rendering
                     }
 
                     return result.Select(corner => (byte) Mathf.RoundToInt(corner / 8F)).ToArray();
+                }
+
+                void getLiquidCornerHeights(BlockState self, int x, int y, int z, Span<float> heights)
+                {
+                    heights[0] = getLiquidCornerHeight(self, x, y, z, 0, -1);  // NE
+                    heights[1] = getLiquidCornerHeight(self, x, y, z, 0, 0);   // SE
+                    heights[2] = getLiquidCornerHeight(self, x, y, z, -1, -1); // NW
+                    heights[3] = getLiquidCornerHeight(self, x, y, z, -1, 0);  // SW
+                }
+
+                float getLiquidCornerHeight(BlockState self, int x, int y, int z, int offsetX, int offsetZ)
+                {
+                    for (var ox = offsetX; ox <= offsetX + 1; ox++)
+                        for (var oz = offsetZ; oz <= offsetZ + 1; oz++)
+                            if (isSameLiquid(self, blocs[x + ox, y + 1, z + oz]))
+                                return 1F;
+
+                    float sumHeight = 0F;
+                    int count = 0;
+
+                    for (var ox = offsetX; ox <= offsetX + 1; ox++)
+                        for (var oz = offsetZ; oz <= offsetZ + 1; oz++)
+                        {
+                            var neighbor = blocs[x + ox, y, z + oz];
+
+                            if (isSameLiquid(self, neighbor))
+                            {
+                                var level = neighbor.LiquidLevel;
+                                if (level == 0) return 14F / 16F;
+
+                                sumHeight += getLiquidBaseHeight(level);
+                                count++;
+                            }
+                            else if (!isLiquidBlockingBlock(neighbor))
+                            {
+                                count++;
+                            }
+                        }
+
+                    if (sumHeight == 0F || count == 0) return 3F / 16F;
+
+                    return sumHeight / count;
+                }
+
+                bool isSameLiquid(BlockState self, BlockState neighbor)
+                {
+                    if (!self.InLiquid || !neighbor.InLiquid) return false;
+                    if (self.InWater) return neighbor.InWater;
+                    if (self.InLava) return neighbor.InLava;
+
+                    return self.FluidStateId == neighbor.FluidStateId;
+                }
+
+                bool isLiquidBlockingBlock(BlockState state)
+                {
+                    return state.FullShape && !state.NoCollision;
+                }
+
+                float getLiquidBaseHeight(byte level)
+                {
+                    return level >= 8 ? 1F : (14F - level * 1.9F) / 16F;
                 }
 
                 int getCullFlags(int x, int y, int z, BlockState self, BlockNeighborCheck check)

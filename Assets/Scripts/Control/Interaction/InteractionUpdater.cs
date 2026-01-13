@@ -101,7 +101,7 @@ namespace CraftSharp.Control
         
         public Direction? TargetDirection { get; private set; }
         public BlockLoc? TargetBlockLoc { get; private set; }
-        public BlockLoc? TargetLiquidLoc { get; private set; }
+        public BlockLoc? TargetFluidLoc { get; private set; }
         public Location? TargetExactLoc { get; private set; }
         
         private float instaBreakCooldown;
@@ -192,9 +192,9 @@ namespace CraftSharp.Control
                 }
 
                 // Update target location if changed
-                if (TargetLiquidLoc != liquidInfo.BlockLoc)
+                if (TargetFluidLoc != liquidInfo.BlockLoc)
                 {
-                    TargetLiquidLoc = liquidInfo.BlockLoc;
+                    TargetFluidLoc = liquidInfo.BlockLoc;
                     liquidSelectionBox.transform.position = liquidInfo.CellPos;
                     
                     EventManager.Instance.Broadcast(new TargetLiquidLocUpdateEvent(liquidInfo.BlockLoc));
@@ -209,9 +209,9 @@ namespace CraftSharp.Control
             else
             {
                 // Update target location if changed
-                if (TargetLiquidLoc is not null)
+                if (TargetFluidLoc is not null)
                 {
-                    TargetLiquidLoc = null;
+                    TargetFluidLoc = null;
 
                     EventManager.Instance.Broadcast(new TargetLiquidLocUpdateEvent(null));
                 }
