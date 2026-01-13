@@ -12,6 +12,7 @@ using Unity.Mathematics;
 using CraftSharp.Control;
 using CraftSharp.Event;
 using CraftSharp.Resource;
+using Unity.VectorGraphics;
 
 namespace CraftSharp.Rendering
 {
@@ -1108,12 +1109,24 @@ namespace CraftSharp.Rendering
             return false;
         }
         
+        private static float GetLiquidBaseHeight(byte level)
+        {
+            return level >= 8 ? 1F : (14F - level * 1.9F) / 16F;
+        }
+
+        private static bool IsSameLiquid(BlockState self, BlockState neighbor)
+        {
+            if (!self.InLiquid || !neighbor.InLiquid) return false;
+            if (self.InWater) return neighbor.InWater;
+            if (self.IsLava) return neighbor.IsLava;
+            return false;
+        }
+        
         public bool RaycastLiquid(List<Vector3Int> cellPosList, Ray ray,
             out Raycaster.AABBRaycastHit aabbInfo,
-            out BlockRaycastInfo blockInfo)
+            out BlockRaycastInfo blockInfo, out ShapeAABB liquidAABB)
         {
-            // TODO: Use more accurate liquid AABB
-            var fullShape = new ShapeAABB(0, 0, 0, 1, 1, 1);
+            liquidAABB = new ShapeAABB(0, 0, 0, 1, 1, 1); // Default fallback
             
             foreach (var cellPos in cellPosList) // Go through the list
             {
@@ -1125,7 +1138,13 @@ namespace CraftSharp.Rendering
                 var blockState = block.State;
                 if (!blockState.InLiquid) continue; // Not in liquid, skip
 
-                aabbInfo = Raycaster.RaycastAABB(cellSpaceRay, fullShape);
+                // Calculate liquid AABB same as in ChunkRenderBuilder
+                var upperNeighbor = GetBlock(blockLoc.Up());
+                var upperNeighborInSameLiquid = IsSameLiquid(blockState, upperNeighbor.State);
+                float liquidHeight = upperNeighborInSameLiquid ? 1F : GetLiquidBaseHeight(blockState.LiquidLevel);
+                liquidAABB = new ShapeAABB(0, 0, 0, 1, liquidHeight, 1);
+
+                aabbInfo = Raycaster.RaycastAABB(cellSpaceRay, liquidAABB);
                 
                 if (aabbInfo.hit)
                 {

@@ -584,7 +584,7 @@ namespace CraftSharp.Rendering
                 {
                     for (var ox = offsetX; ox <= offsetX + 1; ox++)
                         for (var oz = offsetZ; oz <= offsetZ + 1; oz++)
-                            if (isSameLiquid(self, blocs[x + ox, y + 1, z + oz]))
+                            if (IsSameLiquid(self, blocs[x + ox, y + 1, z + oz]))
                                 return 1F;
 
                     float sumHeight = 0F;
@@ -595,12 +595,12 @@ namespace CraftSharp.Rendering
                         {
                             var neighbor = blocs[x + ox, y, z + oz];
 
-                            if (isSameLiquid(self, neighbor))
+                            if (IsSameLiquid(self, neighbor))
                             {
                                 var level = neighbor.LiquidLevel;
                                 if (level == 0) return 14F / 16F;
 
-                                sumHeight += getLiquidBaseHeight(level);
+                                sumHeight += GetLiquidBaseHeight(level);
                                 count++;
                             }
                             else if (!isLiquidBlockingBlock(neighbor))
@@ -614,23 +614,9 @@ namespace CraftSharp.Rendering
                     return sumHeight / count;
                 }
 
-                bool isSameLiquid(BlockState self, BlockState neighbor)
-                {
-                    if (!self.InLiquid || !neighbor.InLiquid) return false;
-                    if (self.InWater) return neighbor.InWater;
-                    if (self.IsLava) return neighbor.IsLava;
-
-                    return self.FluidStateId == neighbor.FluidStateId;
-                }
-
                 bool isLiquidBlockingBlock(BlockState state)
                 {
                     return state.FullShape && !state.NoCollision;
-                }
-
-                float getLiquidBaseHeight(byte level)
-                {
-                    return level >= 8 ? 1F : (14F - level * 1.9F) / 16F;
                 }
 
                 int getCullFlags(int x, int y, int z, BlockState self, BlockNeighborCheck check)
@@ -681,9 +667,23 @@ namespace CraftSharp.Rendering
             }
         }
 
+        private static float GetLiquidBaseHeight(byte level)
+        {
+            return level >= 8 ? 1F : (14F - level * 1.9F) / 16F;
+        }
+
+        private static bool IsSameLiquid(BlockState self, BlockState neighbor)
+        {
+            if (!self.InLiquid || !neighbor.InLiquid) return false;
+            if (self.InWater) return neighbor.InWater;
+            if (self.IsLava) return neighbor.IsLava;
+
+            return self.FluidStateId == neighbor.FluidStateId;
+        }
+
         private static void GetAABBsAt(BlockState state, BlockLoc blockLoc,
             Vector3Int originOffset, Vector3? blockOffset,
-            List<UnityAABB> terrainAABBs, List<UnityAABB> liquidAABBs)
+            List<UnityAABB> terrainAABBs, List<UnityAABB> liquidAABBs, World world)
         {
             var aabbs = state.Shape.ColliderAABBs ?? state.Shape.AABBs;
             var noCollision = state.NoCollision;
@@ -706,8 +706,15 @@ namespace CraftSharp.Rendering
             
             if (state.InLiquid) // Add liquid AABB
             {
-                var center = new Vector3(0.5F, 0.5F, 0.5F) + position;
-                var size = Vector3.one;
+                // Check if upper neighbor is in the same liquid
+                var upperNeighbor = world.GetBlock(blockLoc.Up());
+                var upperNeighborInSameLiquid = IsSameLiquid(state, upperNeighbor.State);
+                
+                // Calculate liquid height: use 1 if upper neighbor is in liquid, otherwise use liquid base height
+                float liquidHeight = upperNeighborInSameLiquid ? 1F : GetLiquidBaseHeight(state.LiquidLevel);
+                
+                var center = new Vector3(0.5F, liquidHeight / 2F, 0.5F) + position;
+                var size = new Vector3(1F, liquidHeight, 1F);
                 var min = center - size * 0.5f;
                 var max = center + size * 0.5f;
                 
@@ -773,7 +780,7 @@ namespace CraftSharp.Rendering
             var terrainCountBefore = terrainAABBs.Count;
             var liquidCountBefore = liquidAABBs.Count;
 
-            GetAABBsAt(block.State, blockLoc, originOffset, blockOffset, terrainAABBs, liquidAABBs);
+            GetAABBsAt(block.State, blockLoc, originOffset, blockOffset, terrainAABBs, liquidAABBs, world);
 
             if (terrainAABBs.Count > terrainCountBefore)
             {
@@ -826,7 +833,7 @@ namespace CraftSharp.Rendering
                 var terrainCountBefore = terrainAABBs.Count;
                 var liquidCountBefore = liquidAABBs.Count;
 
-                GetAABBsAt(block.State, blockLoc, originOffset, blockOffset, terrainAABBs, liquidAABBs);
+                GetAABBsAt(block.State, blockLoc, originOffset, blockOffset, terrainAABBs, liquidAABBs, world);
 
                 if (terrainAABBs.Count > terrainCountBefore)
                 {

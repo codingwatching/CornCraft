@@ -326,9 +326,8 @@ namespace CraftSharp
                 if (interactionUpdater.TargetFluidLoc is not null)
                 {
                     var targetFluidLoc = interactionUpdater.TargetFluidLoc.Value;
-                    var targetDirection = interactionUpdater.TargetDirection!.Value;
                     var targetFluid = ChunkRenderManager.GetBlock(targetFluidLoc);
-                    targetFluidInfo = $"Target Fluid: {targetFluidLoc} ({targetDirection}) {targetFluid.State.FluidStateId} (Level: {targetFluid.State.LiquidLevel})";
+                    targetFluidInfo = $"Target Fluid: {targetFluidLoc} {targetFluid.State.FluidStateId} (Level: {targetFluid.State.LiquidLevel})";
                 }
                 else
                 {

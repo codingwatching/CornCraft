@@ -181,7 +181,7 @@ namespace CraftSharp.Control
             }
             
             // Raycast liquid, only update if liquid distance is smaller than block distance (i.e. Not blocked)
-            if (client.ChunkRenderManager.RaycastLiquid(rayCells, ray, out var aabbInfo2, out var liquidInfo)
+            if (client.ChunkRenderManager.RaycastLiquid(rayCells, ray, out var aabbInfo2, out var liquidInfo, out var liquidAABB)
                 && blockDistance > Vector3.Distance(aabbInfo2.point, ray.origin))
             {
                 // Create selection box if not present
@@ -200,11 +200,8 @@ namespace CraftSharp.Control
                     EventManager.Instance.Broadcast(new TargetLiquidLocUpdateEvent(liquidInfo.BlockLoc));
                 }
                 
-                // TODO: Use more accurate liquid AABB
-                var fullShape = new ShapeAABB(0, 0, 0, 1, 1, 1);
-                
                 // Update shape even if target location is not changed (the block itself may change)
-                liquidSelectionBox.UpdateAABB(fullShape, Color.dodgerBlue);
+                liquidSelectionBox.UpdateAABB(liquidAABB, Color.dodgerBlue);
             }
             else
             {
