@@ -62,15 +62,15 @@ namespace CraftSharp.Rendering
             cullingRules = new();
 
             // Glass blocks
-            BlockNeighborCheck glassNeighborCheck = (_, neighbor) =>
+            static bool glassNeighborCheck(BlockState blockState, BlockState neighbor, Direction direction) =>
                 !GLASS_BLOCK_IDS.Contains(neighbor.BlockId) && !neighbor.MeshFaceOcclusionSolid;
 
             foreach (var stateId in GLASS_BLOCK_IDS
                          .SelectMany(blockId => palette.GetAllNumIds(blockId)))
                 cullingRules[stateId] = glassNeighborCheck;
-            
+
             // Ice block
-            BlockNeighborCheck iceNeighborCheck = (_, neighbor) =>
+            static bool iceNeighborCheck(BlockState blockState, BlockState neighbor, Direction direction) =>
                 ICE_BLOCK_ID != neighbor.BlockId && !neighbor.MeshFaceOcclusionSolid;
 
             foreach (var stateId in palette.GetAllNumIds(ICE_BLOCK_ID))
@@ -623,22 +623,22 @@ namespace CraftSharp.Rendering
                 {
                     var cullFlags = 0;
 
-                    if (check(self, blocs[x, y + 1, z])) // Up
+                    if (check(self, blocs[x, y + 1, z], Direction.Up)) // Up
                         cullFlags |= 1 << 0;
 
-                    if (check(self, blocs[x, y - 1, z])) // Down
+                    if (check(self, blocs[x, y - 1, z], Direction.Down)) // Down
                         cullFlags |= 1 << 1;
                     
-                    if (check(self, blocs[x, y, z + 1])) // South
+                    if (check(self, blocs[x, y, z + 1], Direction.South)) // South
                         cullFlags |= 1 << 2;
 
-                    if (check(self, blocs[x, y, z - 1])) // North
+                    if (check(self, blocs[x, y, z - 1], Direction.North)) // North
                         cullFlags |= 1 << 3;
                     
-                    if (check(self, blocs[x + 1, y, z])) // East
+                    if (check(self, blocs[x + 1, y, z], Direction.East)) // East
                         cullFlags |= 1 << 4;
 
-                    if (check(self, blocs[x - 1, y, z])) // West
+                    if (check(self, blocs[x - 1, y, z], Direction.West)) // West
                         cullFlags |= 1 << 5;
                     
                     return cullFlags;
