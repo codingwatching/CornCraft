@@ -34,7 +34,7 @@
       "icon_type_id": "corncraft:empty_slot_shovel",
       "item_action": "shovel",
       "triggers": [
-        "#minecraft:mineable/shovel"
+        "#minecraft:corncraft/shovel_compat"
       ]
     },
     "pick_up": {
