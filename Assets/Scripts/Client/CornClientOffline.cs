@@ -14,6 +14,7 @@ using CraftSharp.Rendering;
 using CraftSharp.Protocol.Message;
 using CraftSharp.Protocol.Session;
 using CraftSharp.Resource;
+using System.Text.RegularExpressions;
 
 namespace CraftSharp
 {
@@ -316,7 +317,8 @@ namespace CraftSharp
                     var targetBlockLoc = interactionUpdater.TargetBlockLoc.Value;
                     var targetDirection = interactionUpdater.TargetDirection!.Value;
                     var targetBlock = ChunkRenderManager.GetBlock(targetBlockLoc);
-                    targetBlockInfo = $"Target Block: {targetBlockLoc} ({targetDirection}) {targetBlock.State}";
+                    var targetTags = string.Join(", ", GroupTag.GetTagsForObject("block", targetBlock.State.BlockId));
+                    targetBlockInfo = $"Target Block: {targetBlockLoc} ({targetDirection}) {targetBlock.State} Tags: {targetTags}";
                 }
                 else
                 {

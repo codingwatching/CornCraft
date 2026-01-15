@@ -245,18 +245,20 @@ namespace CraftSharp.Control
                 }
             }
         }
-        
+
+        // See block tag #replaceable
         private static readonly HashSet<ResourceLocation> REPLACEABLE_BLOCK_IDS = new()
         {
             new("air"), new("water"), new("lava"),
             new("short_grass"), new("grass"), new("fern"),
-            new("dead_bush"), new("seagrass"), new("tall_seagrass"),
+            new("dead_bush"), new("bush"), new("short_dry_grass"),
+            new("tall_dry_grass"), new("seagrass"), new("tall_seagrass"),
             new("fire"), new("soul_fire"), new("snow"),
-            new("vine"), new("glow_lichen"), new("light"),
+            new("vine"), new("glow_lichen"), new("resin_clump"), new("light"),
             new("tall_grass"), new("large_fern"), new("structure_void"),
             new("void_air"), new("cave_air"), new("bubble_column"),
             new("warped_roots"), new("nether_sprouts"), new("crimson_roots"),
-            new("hanging_roots")
+            new("leaf_litter"), new("hanging_roots")
         };
 
         private static bool CheckBlockReplacement(BlockState targetBlockState,
@@ -338,7 +340,9 @@ namespace CraftSharp.Control
                 }
             }
 
-            return true; // No overlaps found
+            // TODO: No overlaps found, check neighbor blocks
+
+            return true;
         }
 
         private static bool AABBsOverlap(ShapeAABB a, ShapeAABB b)

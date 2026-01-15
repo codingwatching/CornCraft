@@ -149,8 +149,13 @@ namespace CraftSharp
             
             var dataTypes = new MinecraftDataTypes(protocolVersion);
 
-            // Load block/blockstate definitions
+            // Load group tag definitions
             var loadFlag = new DataLoadFlag();
+            Task.Run(() => GroupTag.PrepareData(loadFlag));
+            while (!loadFlag.Finished) yield return null;
+
+            // Load block/blockstate definitions
+            loadFlag.Finished = false;
             Task.Run(() => BlockStatePalette.INSTANCE.PrepareData(dataVersion, loadFlag));
             while (!loadFlag.Finished) yield return null;
             

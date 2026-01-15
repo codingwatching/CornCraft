@@ -111,40 +111,58 @@ namespace CraftSharp.Control
 
                         foreach (var trigger in triggers.DataArray)
                         {
-                            var blockId = ResourceLocation.FromString(trigger.StringValue);
+                            var triggerValue = trigger.StringValue;
+                            var isTag = !string.IsNullOrWhiteSpace(triggerValue) && triggerValue[0] == '#';
+                            var blockIds = Array.Empty<ResourceLocation>();
 
-                            if (palette.TryGetAllNumIds(blockId, out var stateIds, x => blockstatePredicate.Check(x)))
+                            if (isTag)
                             {
-                                foreach (var stateId in stateIds)
+                                var tagId = ResourceLocation.FromString(ParseTagId(triggerValue));
+                                if (!GroupTag.TryGetEntries("block", tagId, out blockIds))
                                 {
-                                    var inters = new List<Interaction>();
-
-                                    var tag = $"special/{entryName}";
-                                    hintKey ??= trigger.StringValue;
-
-                                    if (itemActionType is not null)
-                                    {
-                                        inters.Add(new HarvestInteraction(iconTypeId, blockId, itemActionType.Value, interactionType, hintKey, tag, showInList));
-                                    }
-                                    else
-                                    {
-                                        inters.Add(new TriggerInteraction(iconTypeId, blockId, reusable, interactionType, hintKey, tag, showInList, heldItemPredicate));
-                                    }
-
-                                    if (InteractionTable.TryGetValue(stateId, out var definition))
-                                    {
-                                        definition.AddRange(inters);
-                                    }
-                                    else
-                                    {
-                                        InteractionTable.Add(stateId, new(inters));
-                                    }
-
-                                    //Debug.Log($"Added {entryName} interaction for blockstate [{stateId}] {palette.GetByNumId(stateId)}");
+                                    continue;
                                 }
                             }
-                            // else
-                            //    Debug.LogWarning($"Unknown interactable block {blockId}");
+                            else
+                            {
+                                blockIds = new[] { ResourceLocation.FromString(triggerValue) };
+                            }
+
+                            foreach (var blockId in blockIds)
+                            {
+                                if (palette.TryGetAllNumIds(blockId, out var stateIds, x => blockstatePredicate.Check(x)))
+                                {
+                                    foreach (var stateId in stateIds)
+                                    {
+                                        var inters = new List<Interaction>();
+
+                                        var tag = $"special/{entryName}";
+                                        hintKey ??= triggerValue;
+
+                                        if (itemActionType is not null)
+                                        {
+                                            inters.Add(new HarvestInteraction(iconTypeId, blockId, itemActionType.Value, interactionType, hintKey, tag, showInList));
+                                        }
+                                        else
+                                        {
+                                            inters.Add(new TriggerInteraction(iconTypeId, blockId, reusable, interactionType, hintKey, tag, showInList, heldItemPredicate));
+                                        }
+
+                                        if (InteractionTable.TryGetValue(stateId, out var definition))
+                                        {
+                                            definition.AddRange(inters);
+                                        }
+                                        else
+                                        {
+                                            InteractionTable.Add(stateId, new(inters));
+                                        }
+
+                                        //Debug.Log($"Added {entryName} interaction for blockstate [{stateId}] {palette.GetByNumId(stateId)}");
+                                    }
+                                }
+                                // else
+                                //    Debug.LogWarning($"Unknown interactable block {blockId}");
+                            }
                         }
                     }
                     // else
@@ -153,6 +171,12 @@ namespace CraftSharp.Control
             }
 
             flag.Finished = true;
+        }
+
+        private static string ParseTagId(string tagValue)
+        {
+            var trimmed = tagValue.TrimStart('#').Trim();
+            return trimmed.Contains(':') ? trimmed : $"{GroupTag.DEFAULT_NAMESPACE}:{trimmed}";
         }
     }
 }
