@@ -46,6 +46,7 @@ namespace CraftSharp.Control
     public class InteractionUpdater : MonoBehaviour
     {
         public static readonly ResourceLocation BLOCK_PARTICLE_ID = new("block");
+        public static readonly ResourceLocation REPLACEABLE_TAG_ID = new("corncraft/replaceable_compat");
         private const int MAX_INTERACTION_DISTANCE = 5;
         private const int BLOCK_INTERACTION_RADIUS = 2;
         private const float BLOCK_INTERACTION_RADIUS_SQR = BLOCK_INTERACTION_RADIUS * BLOCK_INTERACTION_RADIUS; // BLOCK_INTERACTION_RADIUS ^ 2
@@ -246,25 +247,11 @@ namespace CraftSharp.Control
             }
         }
 
-        // See block tag #replaceable
-        private static readonly HashSet<ResourceLocation> REPLACEABLE_BLOCK_IDS = new()
-        {
-            new("air"), new("water"), new("lava"),
-            new("short_grass"), new("grass"), new("fern"),
-            new("dead_bush"), new("bush"), new("short_dry_grass"),
-            new("tall_dry_grass"), new("seagrass"), new("tall_seagrass"),
-            new("fire"), new("soul_fire"), new("snow"),
-            new("vine"), new("glow_lichen"), new("resin_clump"), new("light"),
-            new("tall_grass"), new("large_fern"), new("structure_void"),
-            new("void_air"), new("cave_air"), new("bubble_column"),
-            new("warped_roots"), new("nether_sprouts"), new("crimson_roots"),
-            new("leaf_litter"), new("hanging_roots")
-        };
-
         private static bool CheckBlockReplacement(BlockState targetBlockState,
             ResourceLocation blockId, Direction targetDirection)
         {
-            if (REPLACEABLE_BLOCK_IDS.Contains(targetBlockState.BlockId) && targetBlockState.BlockId != blockId)
+            if (GroupTag.TryGetTag("block", REPLACEABLE_TAG_ID, out var replaceableTag) &&
+                replaceableTag.Contains(targetBlockState.BlockId) && targetBlockState.BlockId != blockId)
             {
                 return true;
             }
@@ -283,7 +270,17 @@ namespace CraftSharp.Control
 
         private bool CheckBlockPlacementValidity(BlockLoc blockLoc, BlockState blockState)
         {
-            if (!client || blockState.NoCollision) return true;
+            if (!client) return false;
+
+            // Check if current block at target location is replaceable
+            var currentBlockState = client.ChunkRenderManager.GetBlock(blockLoc).State;
+            if (!GroupTag.TryGetTag("block", REPLACEABLE_TAG_ID, out var replaceableTag) ||
+                !replaceableTag.Contains(currentBlockState.BlockId))
+            {
+                return false; // Current block is not replaceable
+            }
+
+            if (blockState.NoCollision) return true;
 
             // Get all AABBs from the block state (use ColliderAABBs if available, otherwise AABBs)
             var blockAABBs = blockState.Shape.ColliderAABBs ?? blockState.Shape.AABBs;
