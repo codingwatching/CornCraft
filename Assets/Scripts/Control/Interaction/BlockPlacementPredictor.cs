@@ -19,7 +19,7 @@ namespace CraftSharp.Control
             var cameraYawDir = PlayerStatus.GetYawDirection(cameraYaw);
 
             // Special handling for blocks with their wall-attached with unique ids
-            if (targetDirection is not Direction.Up and not Direction.Down)
+            if (targetDirection != Direction.Up)
             {
                 if (blockId.Path.EndsWith("torch"))
                 {
