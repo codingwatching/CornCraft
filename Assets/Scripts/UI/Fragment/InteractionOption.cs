@@ -84,8 +84,8 @@ namespace CraftSharp.UI
         
         public void UpdateWarning(bool showWarning)
         {
-            optionIconImage.color = showWarning ? Color.gold : Color.white;
-            optionHintText.color = showWarning ? Color.orange : Color.white;
+            optionIconImage.color = showWarning ? Color.hotPink : Color.white;
+            optionHintText.color = showWarning ? Color.hotPink : Color.white;
         }
 
         public void UpdateKeyHintText(string keyHint)

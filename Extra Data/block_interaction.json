@@ -4,7 +4,7 @@
     "axe_harvest": {
       "action": "break",
       "hint": "gameplay.interaction.axe_harvest",
-      "icon_type_id": "corncraft:empty_slot_axe",
+      "icon_type_id": "corncraft:filled_slot_axe",
       "item_action": "axe",
       "triggers": [
         "#minecraft:mineable/axe"
@@ -13,7 +13,7 @@
     "hoe_harvest": {
       "action": "break",
       "hint": "gameplay.interaction.hoe_harvest",
-      "icon_type_id": "corncraft:empty_slot_hoe",
+      "icon_type_id": "corncraft:filled_slot_hoe",
       "item_action": "hoe",
       "triggers": [
         "#minecraft:mineable/hoe"
@@ -22,7 +22,7 @@
     "pickaxe_harvest": {
       "action": "break",
       "hint": "gameplay.interaction.pickaxe_harvest",
-      "icon_type_id": "corncraft:empty_slot_pickaxe",
+      "icon_type_id": "corncraft:filled_slot_pickaxe",
       "item_action": "pickaxe",
       "triggers": [
         "#minecraft:mineable/pickaxe"
@@ -31,7 +31,7 @@
     "shovel_harvest": {
       "action": "break",
       "hint": "gameplay.interaction.shovel_harvest",
-      "icon_type_id": "corncraft:empty_slot_shovel",
+      "icon_type_id": "corncraft:filled_slot_shovel",
       "item_action": "shovel",
       "triggers": [
         "#minecraft:corncraft/shovel_compat"

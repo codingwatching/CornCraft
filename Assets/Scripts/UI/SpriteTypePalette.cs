@@ -60,6 +60,7 @@ namespace CraftSharp.UI
                     var u1 = spriteDef.Properties.TryGetValue("use_item_model", out var val) && bool.Parse(val.StringValue); // False if not specified
                     var u2 = !spriteDef.Properties.TryGetValue("use_point_filter", out val) || bool.Parse(val.StringValue); // True if not specified
                     var invert = spriteDef.Properties.TryGetValue("invert_color", out val) && bool.Parse(val.StringValue); // False if not specified
+                    var filled = spriteDef.Properties.TryGetValue("filled_color", out val) && bool.Parse(val.StringValue); // False if not specified
                     var texId = spriteDef.Properties.TryGetValue("texture_id", out val) ? ResourceLocation.FromString(val.StringValue) : ResourceLocation.INVALID;
                     var imageType = spriteDef.Properties.TryGetValue("image_type", out val) ? SpriteType.GetImageType(val.StringValue) : SpriteType.SpriteImageType.Simple;
 
@@ -120,6 +121,24 @@ namespace CraftSharp.UI
                                         pixels[i].r = (byte)(255 - pixels[i].r);
                                         pixels[i].g = (byte)(255 - pixels[i].g);
                                         pixels[i].b = (byte)(255 - pixels[i].b);
+                                        // Alpha channel (pixels[i].a) remains unchanged
+                                    }
+
+                                    texture.SetPixels32(pixels); // Apply modified pixel data
+                                    texture.Apply(); // Upload changes to the GPU
+                                }
+
+                                if (filled) // Fill all pixel colors
+                                {
+                                    var pixels = texture.GetPixels32(); // Read pixel data
+
+                                    // Iterate through each pixel
+                                    for (int i = 0; i < pixels.Length; i++)
+                                    {
+                                        // Fill RGB channels (set to 255)
+                                        pixels[i].r = 255;
+                                        pixels[i].g = 255;
+                                        pixels[i].b = 255;
                                         // Alpha channel (pixels[i].a) remains unchanged
                                     }
 
