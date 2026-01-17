@@ -46,7 +46,6 @@ namespace CraftSharp.Control
     public class InteractionUpdater : MonoBehaviour
     {
         public static readonly ResourceLocation BLOCK_PARTICLE_ID = new("block");
-        public static readonly ResourceLocation REPLACEABLE_TAG_ID = new("corncraft/replaceable_compat");
         private const int MAX_INTERACTION_DISTANCE = 5;
         private const int BLOCK_INTERACTION_RADIUS = 2;
         private const float BLOCK_INTERACTION_RADIUS_SQR = BLOCK_INTERACTION_RADIUS * BLOCK_INTERACTION_RADIUS; // BLOCK_INTERACTION_RADIUS ^ 2
@@ -81,6 +80,7 @@ namespace CraftSharp.Control
         private BaseCornClient? client;
         private CameraController? cameraController;
         private PlayerController? playerController;
+        private BlockPlacementValidator? blockPlacementValidator;
 
         private Action<HeldItemUpdateEvent>? heldItemChangeCallback;
         private Action<TriggerInteractionExecutionEvent>? triggerInteractionExecutionEvent;
@@ -250,7 +250,7 @@ namespace CraftSharp.Control
         private static bool CheckBlockReplacement(BlockState targetBlockState,
             ResourceLocation blockId, Direction targetDirection)
         {
-            if (GroupTag.TryGetTag("block", REPLACEABLE_TAG_ID, out var replaceableTag) &&
+            if (GroupTag.TryGetTag("block", BlockPlacementValidator.REPLACEABLE_TAG_ID, out var replaceableTag) &&
                 replaceableTag.Contains(targetBlockState.BlockId) && targetBlockState.BlockId != blockId)
             {
                 return true;
@@ -268,87 +268,6 @@ namespace CraftSharp.Control
             return false;
         }
 
-        private bool CheckBlockPlacementValidity(BlockLoc blockLoc, BlockState blockState)
-        {
-            if (!client) return false;
-
-            // Check if current block at target location is replaceable
-            var currentBlockState = client.ChunkRenderManager.GetBlock(blockLoc).State;
-            if (!GroupTag.TryGetTag("block", REPLACEABLE_TAG_ID, out var replaceableTag) ||
-                !replaceableTag.Contains(currentBlockState.BlockId))
-            {
-                return false; // Current block is not replaceable
-            }
-
-            if (blockState.NoCollision) return true;
-
-            // Get all AABBs from the block state (use ColliderAABBs if available, otherwise AABBs)
-            var blockAABBs = blockState.Shape.ColliderAABBs ?? blockState.Shape.AABBs;
-            if (blockAABBs.Count == 0) return true; // No collision AABBs, placement is valid
-            
-            // Get nearby entities including the client player
-            var entityRenderManager = client.EntityRenderManager;
-            var nearbyEntityIds = entityRenderManager.GetNearbyEntityIds();
-            
-            // Also include the client player entity
-            var clientEntityRender = entityRenderManager.GetEntityRender(BaseCornClient.CLIENT_ENTITY_ID_INTERNAL);
-
-            var worldPositionOffset = CoordConvert.GetPosDelta(client.WorldOriginOffset);
-            
-            // Check each block AABB against all entity AABBs
-            foreach (var blockAABB in blockAABBs)
-            {
-                // Convert block AABB to world space (Minecraft coordinates)
-                // Block AABBs are in block-local coordinates (0-1 range), add block location
-                var worldBlockAABB = new ShapeAABB(
-                    blockAABB.MinX + blockLoc.X + worldPositionOffset.z,
-                    blockAABB.MinY + blockLoc.Y + worldPositionOffset.y,
-                    blockAABB.MinZ + blockLoc.Z + worldPositionOffset.x,
-                    blockAABB.MaxX + blockLoc.X + worldPositionOffset.z,
-                    blockAABB.MaxY + blockLoc.Y + worldPositionOffset.y,
-                    blockAABB.MaxZ + blockLoc.Z + worldPositionOffset.x
-                );
-
-                // Check against client player entity
-                if (clientEntityRender)
-                {
-                    var playerAABB = clientEntityRender.GetAABB();
-
-                    // Debug.Log($"Checking against client player entity: {clientEntityRender.Name}, {playerAABB.MinX}, {playerAABB.MinY}, {playerAABB.MinZ}, {playerAABB.MaxX}, {playerAABB.MaxY}, {playerAABB.MaxZ}");
-                    // Debug.Log($"World block AABB: {worldBlockAABB.MinX}, {worldBlockAABB.MinY}, {worldBlockAABB.MinZ}, {worldBlockAABB.MaxX}, {worldBlockAABB.MaxY}, {worldBlockAABB.MaxZ}");
-
-                    if (AABBsOverlap(worldBlockAABB, playerAABB))
-                    {
-                        return false; // Overlaps with player
-                    }
-                }
-
-                // Check against all nearby entities
-                foreach (var entityId in nearbyEntityIds.Keys)
-                {
-                    var entityRender = entityRenderManager.GetEntityRender(entityId);
-                    if (!entityRender || entityRender.IsClientEntity) continue; // Skip if null or already checked client entity
-                    
-                    var entityAABB = entityRender.GetAABB();
-                    if (AABBsOverlap(worldBlockAABB, entityAABB))
-                    {
-                        return false; // Overlaps with entity
-                    }
-                }
-            }
-
-            // TODO: No overlaps found, check neighbor blocks
-
-            return true;
-        }
-
-        private static bool AABBsOverlap(ShapeAABB a, ShapeAABB b)
-        {
-            // Two AABBs overlap if they overlap on all three axes
-            return a.MinX < b.MaxX && a.MaxX > b.MinX &&
-                   a.MinY < b.MaxY && a.MaxY > b.MinY &&
-                   a.MinZ < b.MaxZ && a.MaxZ > b.MinZ;
-        }
 
         private void UpdateBlockPlacementPrediction(BlockLoc newBlockLoc, ResourceLocation blockId,
             Direction targetDirection, float cameraYaw, float cameraPitch, bool clickedTopHalf, bool replace)
@@ -378,8 +297,10 @@ namespace CraftSharp.Control
                 blockSelectionBox.transform.position += (Vector3) posOffset;
             }
 
+            Debug.Log($"Predicted Block Placement: [{newBlockLoc}] {predictedBlockState}");
+
             // Check if predicted block placement is valid by checking for AABB overlaps with entities
-            var isValid = CheckBlockPlacementValidity(newBlockLoc, predictedBlockState);
+            var isValid = blockPlacementValidator?.IsPlacementValid(newBlockLoc, predictedBlockState) ?? false;
 
             if (isValid)
             {
@@ -695,6 +616,7 @@ namespace CraftSharp.Control
         {
             client = curClient;
             cameraController = curCameraController;
+            blockPlacementValidator = new BlockPlacementValidator(curClient);
 
             if (playerController != curPlayerController)
             {

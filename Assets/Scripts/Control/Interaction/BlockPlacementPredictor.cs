@@ -66,7 +66,7 @@ namespace CraftSharp.Control
 
             if (propTable.TryGetValue("facing", out var possibleValues))
             {
-                if (blockId == COCOA_ID || blockId.Path.EndsWith("stairs")) invertFacing = false;
+                if (blockId == COCOA_ID || blockId.Path.EndsWith("stairs") || blockId.Path.EndsWith("door")) invertFacing = false;
                 
                 if (possibleValues.Contains("up") && cameraPitch <= -44)
                 {

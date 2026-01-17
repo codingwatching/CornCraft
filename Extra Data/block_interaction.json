@@ -53,22 +53,7 @@
       "icon_type_id": "corncraft:enter_location",
       "reusable": true,
       "triggers": [
-        "minecraft:white_bed",
-        "minecraft:orange_bed",
-        "minecraft:magenta_bed",
-        "minecraft:light_blue_bed",
-        "minecraft:yellow_bed",
-        "minecraft:lime_bed",
-        "minecraft:pink_bed",
-        "minecraft:gray_bed",
-        "minecraft:light_gray_bed",
-        "minecraft:cyan_bed",
-        "minecraft:purple_bed",
-        "minecraft:blue_bed",
-        "minecraft:brown_bed",
-        "minecraft:green_bed",
-        "minecraft:red_bed",
-        "minecraft:black_bed"
+        "#minecraft:beds"
       ]
     },
     "go_to_bed_hidden": {
@@ -79,22 +64,7 @@
       "reusable": true,
       "show_in_list": false,
       "triggers": [
-        "minecraft:white_bed",
-        "minecraft:orange_bed",
-        "minecraft:magenta_bed",
-        "minecraft:light_blue_bed",
-        "minecraft:yellow_bed",
-        "minecraft:lime_bed",
-        "minecraft:pink_bed",
-        "minecraft:gray_bed",
-        "minecraft:light_gray_bed",
-        "minecraft:cyan_bed",
-        "minecraft:purple_bed",
-        "minecraft:blue_bed",
-        "minecraft:brown_bed",
-        "minecraft:green_bed",
-        "minecraft:red_bed",
-        "minecraft:black_bed"
+        "#minecraft:beds"
       ]
     },
     "open_door": {
