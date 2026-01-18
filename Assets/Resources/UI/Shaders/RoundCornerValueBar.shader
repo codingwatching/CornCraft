@@ -4,10 +4,11 @@
     {
         [PerRendererData] _MainTex ("Sprite Texture", 2D) = "white" {}
         _BorderColor ("Border Color", Color) = (1, 1, 1, 1)
+        _FillColor ("Fill Color", Color) = (0.2, 0.5, 1, 1)
         _DeltaColor ("Delta Color", Color) = (1, 0.5, 0.5, 1)
         _ValueColor ("Value Color", Color) = (0.2, 0.5, 1, 1)
 
-        _FillAmount ("Fill Amount", Range(0, 1)) = 1
+        _ValueAmount ("Value Amount", Range(0, 1)) = 1
         _DeltaAmount ("Delta Amount", Range(0, 1)) = 0.5
         
         _StencilComp ("Stencil Comparison", Float) = 8
@@ -88,10 +89,11 @@
             CBUFFER_START(UnityPerMaterial)
             
             half4 _BorderColor;
+            half4 _FillColor;
             half4 _DeltaColor;
             half4 _ValueColor;
-            half _FillAmount;
             half _DeltaAmount;
+            half _ValueAmount;
             
             CBUFFER_END
 
@@ -104,8 +106,11 @@
             // r.w = roundness bottom-left
             float sdRoundBox(float2 p, float2 b, float4 r)
             {
+                // Choose which radius to use
                 r.xy = p.x > 0.0 ? r.xy : r.zw;
                 r.x = p.y > 0.0 ? r.x : r.y;
+
+                // Compute signed distance
                 float2 q = abs(p) - b + r.x;
                 return min(max(q.x, q.y), 0.0) + length(max(q, 0.0)) - r.x;
             }
@@ -124,39 +129,35 @@
 
                 half4 color = borderAlpha > 0.0 ? _BorderColor * borderAlpha : half4(0, 0, 0, 0);
 
-                float maskDist = borderDist + borderThickness * 2.0;
-                float maskAA = max(fwidth(maskDist), 0.001);
-                float maskAlpha = 1.0 - smoothstep(0.0, maskAA, maskDist);
-
                 // Ensure delta/value ordering always uses the smaller amount as the "value"
-                half fillAmount = _FillAmount;
+                half valueAmount = _ValueAmount;
                 half deltaAmount = _DeltaAmount;
-                if (fillAmount > deltaAmount)
+                if (valueAmount > deltaAmount)
                 {
-                    half temp = fillAmount;
-                    fillAmount = deltaAmount;
+                    half temp = valueAmount;
+                    valueAmount = deltaAmount;
                     deltaAmount = temp;
                 }
 
                 // Inner drawable area after padding created by the border mask
                 float2 innerSize = max(size - borderThickness * 2.0, 0.0);
-                float4 fillCornerRadii = cornerRadii * 0.35; // Smaller roundness for inner fills
+                float4 valueCornerRadii = cornerRadii * 0.5; // Smaller roundness for inner value bar
 
                 // Draw delta
                 float2 deltaSize = float2(innerSize.x * deltaAmount, innerSize.y);
                 float2 deltaBias = float2(innerSize.x * (1.0 - deltaAmount), 0.0);
-                float deltaDist = sdRoundBox(input.uv * size + deltaBias, deltaSize, fillCornerRadii);
+                float deltaDist = sdRoundBox(input.uv * size + deltaBias, deltaSize, valueCornerRadii);
                 float deltaAA = max(fwidth(deltaDist), 0.001);
-                float deltaAlpha = (1.0 - smoothstep(0.0, deltaAA, deltaDist)) * maskAlpha;
+                float deltaAlpha = (1.0 - smoothstep(0.0, deltaAA, deltaDist));
 
                 color = deltaAlpha > color.a ? _DeltaColor * deltaAlpha : color;
 
                 // Draw value
-                deltaSize = float2(innerSize.x * fillAmount, innerSize.y);
-                deltaBias = float2(innerSize.x * (1.0 - fillAmount), 0.0);
-                deltaDist = sdRoundBox(input.uv * size + deltaBias, deltaSize, fillCornerRadii);
+                deltaSize = float2(innerSize.x * valueAmount, innerSize.y);
+                deltaBias = float2(innerSize.x * (1.0 - valueAmount), 0.0);
+                deltaDist = sdRoundBox(input.uv * size + deltaBias, deltaSize, valueCornerRadii);
                 deltaAA = max(fwidth(deltaDist), 0.001);
-                float valueAlpha = (1.0 - smoothstep(0.0, deltaAA, deltaDist)) * maskAlpha;
+                float valueAlpha = (1.0 - smoothstep(0.0, deltaAA, deltaDist));
 
                 // Use >= to ensure value color is applied over delta color
                 color = valueAlpha >= color.a ? _ValueColor * valueAlpha : color;

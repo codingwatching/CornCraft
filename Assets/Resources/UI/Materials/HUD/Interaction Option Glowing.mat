@@ -43,7 +43,7 @@ Material:
     - _BorderColor: {r: 0, g: 0.69849163, b: 1, a: 1}
     - _CornerRadii: {r: 0, g: 40, b: 0, a: 0}
     - _DeltaColor: {r: 0, g: 0.78596354, b: 1, a: 1}
-    - _FillColor: {r: 0, g: 0, b: 0, a: 0.19607843}
+    - _FillColor: {r: 0, g: 0, b: 0, a: 0}
     - _Size: {r: 450, g: 36, b: 0, a: 0}
     - _ValueColor: {r: 1, g: 0.54905653, b: 0.75168425, a: 1}
   m_BuildTextureStacks: []

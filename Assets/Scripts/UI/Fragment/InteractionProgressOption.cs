@@ -6,7 +6,7 @@ namespace CraftSharp.UI
     [RequireComponent(typeof (Animator))]
     public class InteractionProgressOption : InteractionOption
     {
-        private static readonly int FILL_AMOUNT  = Shader.PropertyToID("_FillAmount");
+        private static readonly int VALUE_AMOUNT = Shader.PropertyToID("_ValueAmount");
         private static readonly int DELTA_AMOUNT = Shader.PropertyToID("_DeltaAmount");
         
         [SerializeField] private Image barImage;
@@ -23,7 +23,7 @@ namespace CraftSharp.UI
 
         public void UpdateProgress(float progress)
         {
-            barMaterial.SetFloat(FILL_AMOUNT, progress);
+            barMaterial.SetFloat(VALUE_AMOUNT, progress);
             barMaterial.SetFloat(DELTA_AMOUNT, progress);
         }
     }

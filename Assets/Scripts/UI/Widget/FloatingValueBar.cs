@@ -18,8 +18,8 @@ namespace CraftSharp.UI
 
         private void Start()
         {
-            displayTransform = displayFillRenderer!.transform;
-            deltaTransform = deltaFillRenderer!.transform;
+            displayTransform = displayFillRenderer.transform;
+            deltaTransform = deltaFillRenderer.transform;
 
             UpdateValue();
         }
@@ -48,11 +48,11 @@ namespace CraftSharp.UI
                 // Then update visuals
                 var deltaValue = curValue - displayValue;
 
-                displayTransform!.localScale = new(displayValue / maxValue, 1F, 1F);
-                displayTransform!.localPosition = new(displayValue / 2F / maxValue - 0.5F, 0F, 0F);
+                displayTransform.localScale = new(displayValue / maxValue, 1F, 1F);
+                displayTransform.localPosition = new(displayValue / 2F / maxValue - 0.5F, 0F, 0F);
 
-                deltaTransform!.localScale = new(deltaValue / maxValue, 1F, 1F);
-                deltaTransform!.localPosition = new((displayValue + deltaValue / 2F) / maxValue - 0.5F, 0F, 0F);
+                deltaTransform.localScale = new(deltaValue / maxValue, 1F, 1F);
+                deltaTransform.localPosition = new((displayValue + deltaValue / 2F) / maxValue - 0.5F, 0F, 0F);
                 
                 deltaFillRenderer!.color = increaseColor;
             }
@@ -60,11 +60,11 @@ namespace CraftSharp.UI
             float displayFrac = displayValue / maxValue;
 
             if (displayFrac < dangerThreshold)
-                displayFillRenderer!.color = dangerColor;
+                displayFillRenderer.color = dangerColor;
             else if (displayFrac < warningThreshold)
-                displayFillRenderer!.color = warningColor;
+                displayFillRenderer.color = warningColor;
             else
-                displayFillRenderer!.color = normalColor;
+                displayFillRenderer.color = normalColor;
         }
     }
 }

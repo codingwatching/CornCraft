@@ -97,8 +97,11 @@
             // r.w = roundness bottom-left
             float sdRoundBox(float2 p, float2 b, float4 r)
             {
+                // Choose which radius to use
                 r.xy = p.x > 0.0 ? r.xy : r.zw;
                 r.x = p.y > 0.0 ? r.x : r.y;
+
+                // Compute signed distance
                 float2 q = abs(p) - b + r.x;
                 return min(max(q.x, q.y), 0.0) + length(max(q, 0.0)) - r.x;
             }
@@ -114,20 +117,14 @@
                 float outerEdge = 1.0 - smoothstep(0.0, borderAA, borderDist);
                 float innerFalloff = 1.0 - smoothstep(-borderThickness - borderAA, -borderThickness, borderDist);
                 float borderAlpha = saturate(outerEdge * (1.0 - innerFalloff));
+                
+                // Calculate fill area (inside the rounded rectangle)
+                float fillAlpha = 1.0 - smoothstep(-borderAA, borderAA, borderDist);
 
-                half4 color = borderAlpha > 0.0 ? _BorderColor * borderAlpha : half4(0, 0, 0, 0);
+                // Blend border and fill colors
+                half4 color = lerp(_FillColor, _BorderColor, borderAlpha);
+                color.a *= max(borderAlpha, fillAlpha);
 
-                float maskDist = borderDist + borderThickness * 2.0;
-                float maskAA = max(fwidth(maskDist), 0.001);
-                float maskAlpha = 1.0 - smoothstep(0.0, maskAA, maskDist);
-
-                // Draw value
-                float2 fillSize = float2(size.x, size.y);
-                float fillDist = sdRoundBox(input.uv * size, fillSize, cornerRadii);
-                float fillAA = max(fwidth(fillDist), 0.001);
-                float fillAlpha = (1.0 - smoothstep(0.0, fillAA, fillDist)) * maskAlpha;
-
-                color = fillAlpha > color.a ? _FillColor * fillAlpha : color;
                 color *= input.color;
 
                 return color;

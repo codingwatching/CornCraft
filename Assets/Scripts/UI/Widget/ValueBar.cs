@@ -8,7 +8,7 @@ namespace CraftSharp.UI
         private static readonly int BORDER_COLOR = Shader.PropertyToID("_BorderColor");
         private static readonly int VALUE_COLOR  = Shader.PropertyToID("_ValueColor");
         private static readonly int DELTA_COLOR  = Shader.PropertyToID("_DeltaColor");
-        private static readonly int FILL_AMOUNT  = Shader.PropertyToID("_FillAmount");
+        private static readonly int VALUE_AMOUNT = Shader.PropertyToID("_ValueAmount");
         private static readonly int DELTA_AMOUNT = Shader.PropertyToID("_DeltaAmount");
         
         [SerializeField] private Color normalColor   = Color.white;
@@ -35,19 +35,19 @@ namespace CraftSharp.UI
 
         protected override void UpdateValue()
         {
-            if (displayValue > curValue) // Reducing fill
+            if (displayValue > curValue) // Reducing value
             {
                 displayValue = Mathf.Max(displayValue - maxValue * Time.deltaTime * updateMultiplier, curValue);
                 barMaterial.SetColor(DELTA_COLOR, reduceColor);
             }
-            else // Increasing fill
+            else // Increasing value
             {
                 displayValue = Mathf.Min(displayValue + maxValue * Time.deltaTime * updateMultiplier, curValue);
                 barMaterial.SetColor(DELTA_COLOR, increaseColor);
             }
 
-            var currentFillAmount = curValue / maxValue;
-            barMaterial.SetFloat(FILL_AMOUNT, currentFillAmount);
+            var currentValueAmount = curValue / maxValue;
+            barMaterial.SetFloat(VALUE_AMOUNT, currentValueAmount);
 
             var currentDeltaAmount = displayValue / maxValue;
             barMaterial.SetFloat(DELTA_AMOUNT, currentDeltaAmount);
