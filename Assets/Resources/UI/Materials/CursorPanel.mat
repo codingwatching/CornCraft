@@ -40,10 +40,10 @@ Material:
     - _StencilWriteMask: 255
     m_Colors:
     - _BarSize: {r: 300, g: 100, b: 0, a: 0}
-    - _BorderColor: {r: 0.15306127, g: 0, b: 0.5999999, a: 1}
+    - _BorderColor: {r: 0.32215825, g: 0.14448556, b: 0.8415094, a: 1}
     - _CornerRadii: {r: 0, g: 40, b: 0, a: 0}
     - _DeltaColor: {r: 0, g: 0.78596354, b: 1, a: 1}
-    - _FillColor: {r: 0, g: 0, b: 0, a: 1}
+    - _FillColor: {r: 0, g: 0, b: 0, a: 0.9411765}
     - _Size: {r: 450, g: 36, b: 0, a: 0}
     - _ValueColor: {r: 1, g: 0.54905653, b: 0.75168425, a: 1}
   m_BuildTextureStacks: []

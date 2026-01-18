@@ -126,8 +126,13 @@
                 float outerEdge = 1.0 - smoothstep(0.0, borderAA, borderDist);
                 float innerFalloff = 1.0 - smoothstep(-borderThickness - borderAA, -borderThickness, borderDist);
                 float borderAlpha = saturate(outerEdge * (1.0 - innerFalloff));
+                
+                // Calculate fill area (inside the rounded rectangle)
+                float fillAlpha = 1.0 - smoothstep(-borderAA, borderAA, borderDist);
 
-                half4 color = borderAlpha > 0.0 ? _BorderColor * borderAlpha : half4(0, 0, 0, 0);
+                // Blend border and fill colors
+                half4 color = lerp(_FillColor, _BorderColor, borderAlpha);
+                color.a *= max(borderAlpha, fillAlpha);
 
                 // Ensure delta/value ordering always uses the smaller amount as the "value"
                 half valueAmount = _ValueAmount;
@@ -140,7 +145,7 @@
                 }
 
                 // Inner drawable area after padding created by the border mask
-                float2 innerSize = max(size - borderThickness * 2.0, 0.0);
+                float2 innerSize = max(size - borderThickness * 2.5, 0.0);
                 float4 valueCornerRadii = cornerRadii * 0.5; // Smaller roundness for inner value bar
 
                 // Draw delta
@@ -150,7 +155,8 @@
                 float deltaAA = max(fwidth(deltaDist), 0.001);
                 float deltaAlpha = (1.0 - smoothstep(0.0, deltaAA, deltaDist));
 
-                color = deltaAlpha > color.a ? _DeltaColor * deltaAlpha : color;
+                // color = deltaAlpha > color.a ? _DeltaColor * deltaAlpha : color;
+                color = lerp(color, _DeltaColor, deltaAlpha);
 
                 // Draw value
                 deltaSize = float2(innerSize.x * valueAmount, innerSize.y);
@@ -160,7 +166,9 @@
                 float valueAlpha = (1.0 - smoothstep(0.0, deltaAA, deltaDist));
 
                 // Use >= to ensure value color is applied over delta color
-                color = valueAlpha >= color.a ? _ValueColor * valueAlpha : color;
+                // color = valueAlpha >= color.a ? _ValueColor * valueAlpha : color;
+                color = lerp(color, _ValueColor, valueAlpha);
+
                 color *= input.color;
 
                 return color;
