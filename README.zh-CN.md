@@ -65,6 +65,6 @@ CornCraft在CDDL-1.0协议下开源，与MCC保持一致。除非特殊说明的
 更多关于CDDL-1.0的信息可在MCC的[主页](https://github.com/MCCTeam/Minecraft-Console-Client)上查看，协议全文请看[这里](./LICENSE.md)。
 
 ## > 截图
-![CornCraft029.png](https://s2.loli.net/2026/01/18/NG8Uldh3BKSeuVj.png)
+![Screenshot 2026-01-18 170915.png](https://s2.loli.net/2026/01/18/ghF9QXUHGpDysnm.png)
 ![CornCraft021.png](https://s2.loli.net/2024/10/28/kas4ZD8cgrfb6xn.png)
 ![CornCraft020.png](https://s2.loli.net/2024/10/28/xFVCbJNwH6qAZ2E.png)
