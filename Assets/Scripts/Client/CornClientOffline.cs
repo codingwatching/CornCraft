@@ -14,7 +14,6 @@ using CraftSharp.Rendering;
 using CraftSharp.Protocol.Message;
 using CraftSharp.Protocol.Session;
 using CraftSharp.Resource;
-using System.Text.RegularExpressions;
 
 namespace CraftSharp
 {
@@ -25,7 +24,7 @@ namespace CraftSharp
 
         #region Login Information
         public static readonly int DUMMY_PROTOCOL_VERSION = ProtocolHandler.GetMinSupported();
-        public const string DUMMY_USERNAME = "dummy_user";
+        public const string DUMMY_USERNAME = "OfflinePlayer";
         private static readonly Guid LOCAL_UUID = new("069a79f4-44e9-4726-a5be-fca90e38aaf5");
         #endregion
 

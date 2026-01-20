@@ -1,10 +1,8 @@
 using System;
 using System.Linq;
 using System.Collections;
-using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
-using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 using TMPro;
@@ -12,7 +10,6 @@ using TMPro;
 using CraftSharp.Protocol;
 using CraftSharp.Protocol.ProfileKey;
 using CraftSharp.Protocol.Session;
-using CraftSharp.Rendering;
 
 namespace CraftSharp.UI
 {
@@ -20,17 +17,17 @@ namespace CraftSharp.UI
     {
         private const string LOCALHOST_ADDRESS = "127.0.0.1";
 
-        [SerializeField] private TMP_InputField serverInput, usernameInput, authCodeInput;
+        [SerializeField] private TMP_InputField serverInput, authCodeInput;
         [SerializeField] private Button         loginButton, authConfirmButton, authCancelButton;
         [SerializeField] private Button         loginCloseButton, authLinkButton, authCloseButton, localhostButton;
         [SerializeField] private Button         localGameButton, loginPanelButton, quitButton;
-        [SerializeField] private TMP_Text       loadStateInfoText, usernameOptions, usernamePlaceholder, authLinkText;
-        [SerializeField] private CanvasGroup    loginPanel, usernamePanel, authPanel;
-        [SerializeField] private TMP_Dropdown   loginDropDown;
+        [SerializeField] private TMP_Text       loadStateInfoText, authLinkText;
+        [SerializeField] private CanvasGroup    loginPanel, authPanel;
+        [SerializeField] private TMP_Dropdown   profileDropDown;
+        [SerializeField] private Sprite         defaultProfileIcon;
 
         [SerializeField] private Button         enterGamePanel;
 
-        [SerializeField] private BaseEnvironmentManager environmentManager;
         [SerializeField] private CelestiaBridge celestiaBridge;
 
         #nullable enable
@@ -40,12 +37,6 @@ namespace CraftSharp.UI
         private StartLoginInfo? loginInfo = null;
 
         #nullable disable
-
-        // Login auto-complete
-        private int  usernameIndex =  0;
-        private bool namesShown = false;
-        
-        private string[] cachedOnlineNames = { }, cachedOfflineNames = { }, shownNames = { };
 
         /// <summary>
         /// Load server information in ServerIP and ServerPort variables from a "serverip:port" couple or server alias
@@ -98,7 +89,7 @@ namespace CraftSharp.UI
                 // IPv4 addresses or domain names contain at least a dot
                 if (sip.Length == 1 && host.Contains('.') && host.Any(char.IsLetter) && ProtocolSettings.ResolveSrvRecords)
                 {
-                    //Domain name without port may need Minecraft SRV Record lookup
+                    // Domain name without port may need Minecraft SRV Record lookup
                     ProtocolHandler.MinecraftServiceLookup(ref host, ref port);
                 }
 
@@ -121,7 +112,7 @@ namespace CraftSharp.UI
             var protocolVersion = CornClientOffline.DUMMY_PROTOCOL_VERSION;
             CornApp.Notify(Translations.Get("mcc.server_protocol", serverVersionName, protocolVersion));
 
-            var session = new SessionToken { PlayerName = "OfflinePlayer" };
+            var session = new SessionToken { PlayerName = CornClientOffline.DUMMY_USERNAME };
             var accountLower = CornClientOffline.DUMMY_USERNAME.ToLower();
             // Dummy authentication completed, hide the panel...
             HideLoginPanel();
@@ -148,7 +139,7 @@ namespace CraftSharp.UI
             loginInfo = null;
 
             string serverText = serverInput.text;
-            string account = usernameInput.text;
+            string account = ""; // TODO: Get from selected user profile
             string accountLower = account.ToLower();
 
             var session = new SessionToken();
@@ -157,7 +148,7 @@ namespace CraftSharp.UI
             #nullable disable
 
             var result = ProtocolHandler.LoginResult.LoginRequired;
-            var microsoftLogin = loginDropDown.value == 0; // Dropdown value is 0 if use Microsoft login
+            var microsoftLogin = profileDropDown.value == 0; // Dropdown value is 0 if use Microsoft login
 
             // Login Microsoft/Offline player account
             if (!microsoftLogin)
@@ -435,59 +426,6 @@ namespace CraftSharp.UI
             loginPanelButton.interactable = true;
         }
 
-        private void RefreshUsernames()
-        {
-            if (shownNames.Length > 0) // Show login candidates
-            {
-                StringBuilder str = new();
-                for (int i = 0;i < shownNames.Length;i++)
-                {
-                    str.Append(
-                        i == usernameIndex ? $"<color=yellow>{shownNames[i]}</color>" : shownNames[i]
-                    ).Append('\n');
-                }
-                usernameOptions.text = str.ToString();
-                usernamePanel.alpha = 1F;
-                namesShown         = true;
-            }
-            else // Hide them away...
-            {
-                usernamePanel.alpha = 0F;
-                namesShown        = false;
-            }
-        }
-
-        private void UpdateUsernamePanel(string input)
-        {
-            var microsoftLogin = loginDropDown.value == 0;
-            var cachedNames = microsoftLogin ? cachedOnlineNames : cachedOfflineNames;
-            
-            shownNames = cachedNames.Where(
-                    login => login != input && login.Contains(input)).ToArray();
-
-            RefreshUsernames();
-        }
-
-        private void HideUsernamePanel(string message)
-        {
-            usernameIndex = 0;
-            usernamePanel.alpha = 0F;
-            namesShown = false;
-        }
-        
-        private void UpdateUsernameDefault()
-        {
-            var microsoftLogin = loginDropDown.value == 0;
-            var cachedNames = microsoftLogin ? cachedOnlineNames : cachedOfflineNames;
-            
-            usernameInput.text = cachedNames.Length > 0 ? cachedNames[0] : string.Empty;
-        }
-
-        private void UpdateUsernamePlaceholder(int selection)
-        {
-            usernamePlaceholder.text = selection == 0 ? "Email Address" : "User Name";
-        }
-
         private void CopyAuthLink()
         {
             GUIUtility.systemCopyBuffer = authLinkText.text;
@@ -545,12 +483,20 @@ namespace CraftSharp.UI
             HideAuthPanel();
         }
 
-        
-        private IEnumerator UpdateLoginMode(int selection)
+        private void UpdateStoredUserProfiles()
         {
-            UpdateUsernamePlaceholder(selection);
-            UpdateUsernameDefault();
-            
+            profileDropDown.ClearOptions();
+
+            // TODO: Load stored user profiles from json file
+            for (int i = 0; i < 3; i++)
+            {
+                var optionText = $"Profile {i}";
+                profileDropDown.options.Add(new TMP_Dropdown.OptionData(optionText, defaultProfileIcon, Color.white));
+            }
+        }
+        
+        private IEnumerator UpdateSelectedProfile(int selection)
+        {
             // Workaround for UGUI EventSystem click event bug, if the option being clicked is above the login button,
             // it'll trigger a null object exception every frame until the mouse pointer is moved out from the button area
             loginButton.gameObject.SetActive(false);
@@ -582,12 +528,6 @@ namespace CraftSharp.UI
 
         private void Start()
         {
-            // Set camera for environment manager
-            if (environmentManager != null)
-            {
-                environmentManager.SetCamera(GameObject.FindGameObjectWithTag("MainCamera").GetComponent<Camera>());
-            }
-
             // Generate default data or check update (Need to be done with priority because it contains translation texts)
             var extraDataDir = PathHelper.GetExtraDataDirectory();
             var builtinResLoad = BuiltinResourceHelper.ReadyBuiltinResource(
@@ -601,11 +541,9 @@ namespace CraftSharp.UI
             while (builtinResLoad.MoveNext()) { /* Do nothing */ }
             
             // Initialize controls
-            usernameOptions.text = string.Empty;
-            usernamePanel.alpha  = 0F; // Hide at start
             enterGamePanel.gameObject.SetActive(false);
             enterGamePanel.onClick.AddListener(() => StartCoroutine(EnterGame()));
-            loginDropDown.onValueChanged.AddListener(selection => StartCoroutine(UpdateLoginMode(selection)));
+            profileDropDown.onValueChanged.AddListener(selection => StartCoroutine(UpdateSelectedProfile(selection)));
 
             //Load cached sessions from disk if necessary
             if (ProtocolSettings.SessionCaching == ProtocolSettings.CacheType.Disk)
@@ -613,22 +551,13 @@ namespace CraftSharp.UI
                 var cacheLoaded = SessionCache.InitializeDiskCache();
                 if (ProtocolSettings.DebugMode)
                     Debug.Log(Translations.Get(cacheLoaded ? "debug.session_cache_ok" : "debug.session_cache_fail"));
-
-                if (cacheLoaded)
-                {
-                    cachedOnlineNames = SessionCache.GetCachedOnlineLogins();
-                    cachedOfflineNames = SessionCache.GetCachedOfflineLogins();
-                }
             }
 
             // TODO: Also initialize server with cached values
             serverInput.text = LOCALHOST_ADDRESS;
-            UpdateUsernameDefault();
+            UpdateStoredUserProfiles();
             
-            loginDropDown.value = 0; // Online by default
-            UpdateUsernamePlaceholder(0);
-            if (cachedOnlineNames.Length > 0)
-                usernameInput.text = cachedOnlineNames[0];
+            profileDropDown.value = 0; // Select first by default
 
             // Prepare panels at start
             ShowLoginPanel();
@@ -636,10 +565,6 @@ namespace CraftSharp.UI
 
             // Add listeners
             localhostButton.onClick.AddListener(() => serverInput.text = LOCALHOST_ADDRESS);
-
-            usernameInput.onValueChanged.AddListener(UpdateUsernamePanel);
-            usernameInput.onSelect.AddListener(UpdateUsernamePanel);
-            usernameInput.onEndEdit.AddListener(HideUsernamePanel);
 
             localGameButton.onClick.AddListener(TryConnectDummyServer);
             quitButton.onClick.AddListener(QuitGame);
@@ -661,32 +586,6 @@ namespace CraftSharp.UI
 
             // Release cursor (Useful when re-entering login scene from game)
             Cursor.lockState = CursorLockMode.None;
-        }
-
-        private void Update()
-        {
-            if (namesShown && Keyboard.current != null)
-            {
-                if (Keyboard.current.upArrowKey.wasPressedThisFrame)
-                {
-                    usernameIndex = (usernameIndex + 1) % shownNames.Length;
-                    RefreshUsernames();
-                }
-                else if (Keyboard.current.downArrowKey.wasPressedThisFrame)
-                {
-                    usernameIndex = (usernameIndex + shownNames.Length - 1) % shownNames.Length;
-                    RefreshUsernames();
-                }
-
-                if (Keyboard.current.tabKey.wasPressedThisFrame) // Tab-complete
-                {
-                    if (usernameIndex >= 0 && usernameIndex < shownNames.Length)
-                    {
-                        usernameInput.text = shownNames[usernameIndex];
-                        usernameInput.MoveTextEnd(false);
-                    }
-                }
-            }
         }
     }
 }
