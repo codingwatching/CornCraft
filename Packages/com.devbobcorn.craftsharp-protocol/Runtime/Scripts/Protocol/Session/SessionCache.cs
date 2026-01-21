@@ -25,7 +25,6 @@ namespace CraftSharp.Protocol.Session
             "launcher_profiles.json"
         );
 
-        private static FileMonitor? cacheMonitor;
         private static readonly Dictionary<string, SessionToken> sessions = new();
         private static readonly HashSet<string> offlineNames = new();
         private static readonly Timer updateTimer = new(100);
@@ -94,7 +93,6 @@ namespace CraftSharp.Protocol.Session
         /// <returns>TRUE if session tokens are seeded from file</returns>
         public static bool InitializeDiskCache()
         {
-            cacheMonitor = new FileMonitor(PathHelper.GetRootDirectory(), SessionCacheFilePlaintext, new FileSystemEventHandler(OnChanged));
             updateTimer.Elapsed += HandlePending;
             return LoadFromDisk();
         }
@@ -217,7 +215,7 @@ namespace CraftSharp.Protocol.Session
 
                 try
                 {
-                    foreach (string line in FileMonitor.ReadAllLinesWithRetries(PathHelper.GetRootDirectory() + Path.DirectorySeparatorChar + SessionCacheFilePlaintext))
+                    foreach (string line in File.ReadAllLines(PathHelper.GetRootDirectory() + Path.DirectorySeparatorChar + SessionCacheFilePlaintext))
                     {
                         if (!line.Trim().StartsWith("#"))
                         {
@@ -282,7 +280,7 @@ namespace CraftSharp.Protocol.Session
 
             try
             {
-                FileMonitor.WriteAllLinesWithRetries(PathHelper.GetRootDirectory() + Path.DirectorySeparatorChar + SessionCacheFilePlaintext, sessionCacheLines);
+                File.WriteAllLines(PathHelper.GetRootDirectory() + Path.DirectorySeparatorChar + SessionCacheFilePlaintext, sessionCacheLines);
             }
             catch (IOException e)
             {

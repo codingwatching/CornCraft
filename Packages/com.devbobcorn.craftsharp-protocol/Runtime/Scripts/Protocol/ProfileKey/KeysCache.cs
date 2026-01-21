@@ -17,7 +17,6 @@ namespace CraftSharp.Protocol.ProfileKey
     {
         private const string KeysCacheFilePlaintext = "ProfileKeyCache.ini";
 
-        private static FileMonitor? cachemonitor;
         private static readonly Dictionary<string, PlayerKeyPair> keys = new();
         private static readonly Timer updatetimer = new(100);
         private static readonly List<KeyValuePair<string, PlayerKeyPair>> pendingadds = new();
@@ -75,7 +74,6 @@ namespace CraftSharp.Protocol.ProfileKey
         /// <returns>TRUE if keys are seeded from file</returns>
         public static bool InitializeDiskCache()
         {
-            cachemonitor = new FileMonitor(PathHelper.GetRootDirectory(), KeysCacheFilePlaintext, new FileSystemEventHandler(OnChanged));
             updatetimer.Elapsed += HandlePending;
             return LoadFromDisk();
         }
@@ -122,7 +120,7 @@ namespace CraftSharp.Protocol.ProfileKey
 
                 try
                 {
-                    foreach (string line in FileMonitor.ReadAllLinesWithRetries(KeysCacheFilePlaintext))
+                    foreach (string line in File.ReadAllLines(KeysCacheFilePlaintext))
                     {
                         if (!line.TrimStart().StartsWith("#"))
                         {
@@ -190,7 +188,7 @@ namespace CraftSharp.Protocol.ProfileKey
 
             try
             {
-                FileMonitor.WriteAllLinesWithRetries(PathHelper.GetRootDirectory() + Path.DirectorySeparatorChar + KeysCacheFilePlaintext, KeysCacheLines);
+                File.WriteAllLines(PathHelper.GetRootDirectory() + Path.DirectorySeparatorChar + KeysCacheFilePlaintext, KeysCacheLines);
             }
             catch (IOException e)
             {

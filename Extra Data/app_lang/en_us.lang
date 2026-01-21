@@ -115,6 +115,11 @@ keybinding.keyboard.ralt=R Alt
 keybinding.keyboard.enter=Enter
 
 [login]
+login.offline=Offline
+login.placeholder_email=Email Address
+login.placeholder_playername=Player Name
+login.profile_name_empty=Profile name is empty!
+login.email_invalid=Email address is invalid!
 login.dummy_server=Dummy Server
 login.server_name_invalid=Failed to parse server name or address!
 login.link_copied=Link copied to clipboard

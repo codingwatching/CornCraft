@@ -115,6 +115,11 @@ keybinding.keyboard.ralt=右Alt
 keybinding.keyboard.enter=回车
 
 [login]
+login.offline=离线
+login.placeholder_email=电子邮件地址
+login.placeholder_playername=玩家名称
+login.profile_name_empty=档案名称为空！
+login.email_invalid=电子邮件地址无效！
 login.dummy_server=虚拟服务器
 login.server_name_invalid=服务器名称或地址无效！
 login.link_copied=链接已复制到剪切板

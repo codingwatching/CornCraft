@@ -1,9 +1,11 @@
 using System;
 using System.Linq;
 using System.Collections;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 
 using TMPro;
 
@@ -17,26 +19,31 @@ namespace CraftSharp.UI
     {
         private const string LOCALHOST_ADDRESS = "127.0.0.1";
 
-        [SerializeField] private TMP_InputField serverInput, authCodeInput;
-        [SerializeField] private Button         loginButton, authConfirmButton, authCancelButton;
-        [SerializeField] private Button         loginCloseButton, authLinkButton, authCloseButton, localhostButton;
-        [SerializeField] private Button         localGameButton, loginPanelButton, quitButton;
-        [SerializeField] private TMP_Text       loadStateInfoText, authLinkText;
-        [SerializeField] private CanvasGroup    loginPanel, authPanel;
-        [SerializeField] private TMP_Dropdown   profileDropDown;
-        [SerializeField] private Sprite         defaultProfileIcon;
-
-        [SerializeField] private Button         enterGamePanel;
-
+        [SerializeField] private TMP_InputField serverInput;
+        [SerializeField] private Button loginButton;
+        [SerializeField] private Button loginCloseButton;
+        [SerializeField] private Button localhostButton, manageServersButton;
+        [SerializeField] private Button addProfileButton;
+        [SerializeField] private Button loginPanelButton, testButton, quitButton;
+        [SerializeField] private TMP_Text loadStateInfoText;
+        [SerializeField] private CanvasGroup loginPanel;
+        [SerializeField] private TMP_Dropdown profileDropDown;
+        [SerializeField] private Sprite defaultProfileIcon;
+        [SerializeField] private AuthPanel authPanel;
+        [SerializeField] private AddProfilePanel addProfilePanel;
+        [SerializeField] private ServerListPanel serverListPanel;
+        [SerializeField] private Button enterGamePanel;
         [SerializeField] private CelestiaBridge celestiaBridge;
 
         #nullable enable
 
-        private bool preparingGame = false, authenticating = false, authCancelled = false;
+        private bool preparingGame = false;
         private bool resourceLoaded = false;
         private StartLoginInfo? loginInfo = null;
 
         #nullable disable
+
+        private readonly Dictionary<string, UserProfile> profileOptionsByText = new();
 
         /// <summary>
         /// Load server information in ServerIP and ServerPort variables from a "serverip:port" couple or server alias
@@ -139,8 +146,17 @@ namespace CraftSharp.UI
             loginInfo = null;
 
             string serverText = serverInput.text;
-            string account = ""; // TODO: Get from selected user profile
-            string accountLower = account.ToLower();
+            var selectedProfile = UserProfileManager.GetSelectedProfile();
+            if (selectedProfile == null)
+            {
+                CornApp.Notify("No user profile selected.", Notification.Type.Warning);
+                preparingGame = false;
+                loadStateInfoText.text = Translations.Get("login.login_failed");
+                yield break;
+            }
+
+            string account = selectedProfile.LoginName?.Trim() ?? string.Empty;
+            string accountLower = account.ToLowerInvariant();
 
             var session = new SessionToken();
             #nullable enable
@@ -148,7 +164,7 @@ namespace CraftSharp.UI
             #nullable disable
 
             var result = ProtocolHandler.LoginResult.LoginRequired;
-            var microsoftLogin = profileDropDown.value == 0; // Dropdown value is 0 if use Microsoft login
+            var microsoftLogin = selectedProfile.Type == UserProfileType.Microsoft;
 
             // Login Microsoft/Offline player account
             if (!microsoftLogin)
@@ -168,71 +184,46 @@ namespace CraftSharp.UI
                 session.PlayerName = account;
             }
             else
-            {   // Validate cached session or login new session.
-                if (ProtocolSettings.SessionCaching != ProtocolSettings.CacheType.None && SessionCache.Contains(accountLower))
-                {
-                    session = SessionCache.Get(accountLower);
-                    result = ProtocolHandler.GetTokenValidation(session);
-                    if (result != ProtocolHandler.LoginResult.Success)
-                    {
-                        Debug.Log(Translations.Get("mcc.session_invalid"));
-                        // Try to refresh access token
-                        if (!string.IsNullOrWhiteSpace(session.RefreshToken))
-                        {
-                            try
-                            {
-                                result = ProtocolHandler.MicrosoftLoginRefresh(session.RefreshToken, out session, ref account);
-                            }
-                            catch (Exception e)
-                            {
-                                Debug.LogError("Refresh access token fail: " + e.Message);
-                                result = ProtocolHandler.LoginResult.InvalidResponse;
-                            }
-                        }
-                    }
-                    else
-                        Debug.Log(Translations.Get("mcc.session_valid", session.PlayerName));
-                }
-
-                if (result != ProtocolHandler.LoginResult.Success)
+            {
+                // Validate cached session or login new session.
+                var authUrl = string.Empty;
+                result = UserProfileManager.StartMicrosoftAuthentication(selectedProfile, out session, out account, out authUrl);
+                if (result == ProtocolHandler.LoginResult.LoginRequired)
                 {
                     Debug.Log(Translations.Get("mcc.connecting", "Microsoft"));
-                    authenticating = true;
 
                     // Start brower and open the page...
-                    var url = string.IsNullOrEmpty(account) ?
-                        Protocol.Microsoft.SignInUrl :
-                        Protocol.Microsoft.GetSignInUrlWithHint(account);
+                    Protocol.Microsoft.OpenBrowser(authUrl);
 
-                    Protocol.Microsoft.OpenBrowser(url);
-                    
                     // Show the browser auth panel...
-                    ShowAuthPanel(url);
+                    authPanel.Show(authUrl);
 
                     // Wait for the user to proceed or cancel
-                    while (authenticating)
+                    while (authPanel.IsAuthenticating)
                         yield return null;
-                    
-                    if (authCancelled) // Authentication cancelled by user
+
+                    if (authPanel.WasAuthCancelled) // Authentication cancelled by user
                         result = ProtocolHandler.LoginResult.UserCancel;
                     else // Proceed authentication...
                     {
-                        var code = authCodeInput.text.Trim();
-                        try
-                        {
-                            result = ProtocolHandler.MicrosoftBrowserLogin(code, out session, ref account);
-                        }
-                        catch // Authentication failed (code expired or something...)
-                        {
-                            result = ProtocolHandler.LoginResult.OtherError;
-                        }
+                        var code = authPanel.GetAuthCode();
+                        result = UserProfileManager.CompleteMicrosoftAuthentication(selectedProfile, code, out session, out account);
                     }
+                }
+                else if (result == ProtocolHandler.LoginResult.Success)
+                {
+                    Debug.Log(Translations.Get("mcc.session_valid", session.PlayerName));
+                }
+                else
+                {
+                    Debug.Log(Translations.Get("mcc.session_invalid"));
                 }
             }
 
             // Proceed to target server
             if (result == ProtocolHandler.LoginResult.Success)
             {
+                accountLower = account.ToLowerInvariant();
                 if (!ParseServerIP(serverText, out var host, out var port) || host is null)
                 {
                     CornApp.Notify(Translations.Get("login.server_name_invalid"), Notification.Type.Warning);
@@ -426,73 +417,110 @@ namespace CraftSharp.UI
             loginPanelButton.interactable = true;
         }
 
-        private void CopyAuthLink()
+        private void ShowAddProfilePanel()
         {
-            GUIUtility.systemCopyBuffer = authLinkText.text;
-            CornApp.Notify(Translations.Get("login.link_copied"), Notification.Type.Success);
-        }
-
-        private void PasteAuthCode()
-        {
-            authCodeInput.text = GUIUtility.systemCopyBuffer;
-        }
-
-        private void ShowAuthPanel(string url)
-        {
-            // Update auth panel link text
-            authLinkText.text = url;
-
-            // Clear existing text if any
-            authCodeInput.text = string.Empty;
-
-            authPanel.alpha = 1F;
-            authPanel.blocksRaycasts = true;
-            authPanel.interactable = true;
-
-            authenticating = true;
-            authCancelled = false;
-        }
-
-        private void HideAuthPanel()
-        {
-            authPanel.alpha = 0F;
-            authPanel.blocksRaycasts = false;
-            authPanel.interactable = false;
-
-            authenticating = false;
-        }
-
-        private void CancelAuth()
-        {
-            authCancelled = true;
-            HideAuthPanel();
-        }
-
-        private void ConfirmAuth()
-        {
-            var code = authCodeInput.text.Trim();
-
-            if (string.IsNullOrEmpty(code))
-            {
-                CornApp.Notify(Translations.Get("login.auth_code_empty"), Notification.Type.Warning);
-                return;
-            }
-
-            authCancelled = false;
-
-            HideAuthPanel();
+            addProfilePanel.Show();
         }
 
         private void UpdateStoredUserProfiles()
         {
             profileDropDown.ClearOptions();
+            profileOptionsByText.Clear();
 
-            // TODO: Load stored user profiles from json file
-            for (int i = 0; i < 3; i++)
+            UserProfileManager.LoadProfiles();
+
+            foreach (var profile in UserProfileManager.Profiles)
             {
-                var optionText = $"Profile {i}";
+                var optionText = profile.LoginName;
+                if (profile.Type == UserProfileType.Offline)
+                {
+                    optionText += $" ({Translations.Get("login.offline")})";
+                }
+
                 profileDropDown.options.Add(new TMP_Dropdown.OptionData(optionText, defaultProfileIcon, Color.white));
+                profileOptionsByText[optionText] = profile;
             }
+
+            profileDropDown.interactable = UserProfileManager.Profiles.Count > 0;
+            loginButton.interactable = UserProfileManager.Profiles.Count > 0;
+
+            if (UserProfileManager.Profiles.Count == 0)
+            {
+                profileDropDown.options.Add(new TMP_Dropdown.OptionData("No profiles", defaultProfileIcon, Color.white));
+                profileDropDown.value = 0;
+            }
+            else
+            {
+                profileDropDown.value = Mathf.Clamp(UserProfileManager.SelectedIndex, 0, UserProfileManager.Profiles.Count - 1);
+            }
+
+            profileDropDown.RefreshShownValue();
+        }
+
+        private void RemoveProfile(UserProfileType type, string loginName)
+        {
+            if (!UserProfileManager.RemoveProfile(type, loginName))
+                return;
+
+            profileDropDown.Hide();
+            UpdateStoredUserProfiles();
+        }
+
+        private IEnumerator SetupProfileRemoveButtons()
+        {
+            yield return null;
+
+            var dropdownList = profileDropDown.transform.Find("Dropdown List");
+            if (dropdownList == null)
+                yield break;
+
+            var content = dropdownList.Find("Viewport/Content");
+            if (content == null)
+                yield break;
+
+            for (int i = 0; i < content.childCount; i++)
+            {
+                var tracker = content.GetChild(i).GetComponent<DropdownItemTracker>();
+                if (tracker == null)
+                    continue;
+
+                if (tracker.RemoveButton == null)
+                    tracker.RemoveButton = tracker.GetComponentInChildren<Button>(true);
+
+                if (tracker.RemoveButton == null)
+                    continue;
+
+                var labelTransform = tracker.transform.Find("Item Label");
+                var label = labelTransform != null
+                    ? labelTransform.GetComponent<TMP_Text>()
+                    : tracker.GetComponentInChildren<TMP_Text>(true);
+
+                if (label == null || string.IsNullOrWhiteSpace(label.text))
+                    continue;
+
+                if (!profileOptionsByText.TryGetValue(label.text, out var profile))
+                    continue;
+
+                tracker.ProfileType = profile.Type;
+                tracker.LoginName = profile.LoginName;
+                tracker.RemoveButton.onClick.RemoveAllListeners();
+                tracker.RemoveButton.onClick.AddListener(() => RemoveProfile(tracker.ProfileType, tracker.LoginName));
+            }
+        }
+
+        private void SetupProfileDropdownTriggers()
+        {
+            var trigger = profileDropDown.GetComponent<EventTrigger>();
+            if (trigger == null)
+                trigger = profileDropDown.gameObject.AddComponent<EventTrigger>();
+
+            var clickEntry = new EventTrigger.Entry { eventID = EventTriggerType.PointerClick };
+            clickEntry.callback.AddListener(_ => StartCoroutine(SetupProfileRemoveButtons()));
+            trigger.triggers.Add(clickEntry);
+
+            var submitEntry = new EventTrigger.Entry { eventID = EventTriggerType.Submit };
+            submitEntry.callback.AddListener(_ => StartCoroutine(SetupProfileRemoveButtons()));
+            trigger.triggers.Add(submitEntry);
         }
         
         private IEnumerator UpdateSelectedProfile(int selection)
@@ -502,6 +530,11 @@ namespace CraftSharp.UI
             loginButton.gameObject.SetActive(false);
             yield return new WaitForSecondsRealtime(0.2F);
             loginButton.gameObject.SetActive(true);
+
+            if (UserProfileManager.Profiles.Count > 0)
+            {
+                UserProfileManager.SelectedIndex = selection;
+            }
         }
 
         private IEnumerator EnterGame()
@@ -544,6 +577,7 @@ namespace CraftSharp.UI
             enterGamePanel.gameObject.SetActive(false);
             enterGamePanel.onClick.AddListener(() => StartCoroutine(EnterGame()));
             profileDropDown.onValueChanged.AddListener(selection => StartCoroutine(UpdateSelectedProfile(selection)));
+            SetupProfileDropdownTriggers();
 
             //Load cached sessions from disk if necessary
             if (ProtocolSettings.SessionCaching == ProtocolSettings.CacheType.Disk)
@@ -556,29 +590,22 @@ namespace CraftSharp.UI
             // TODO: Also initialize server with cached values
             serverInput.text = LOCALHOST_ADDRESS;
             UpdateStoredUserProfiles();
-            
-            profileDropDown.value = 0; // Select first by default
 
             // Prepare panels at start
             ShowLoginPanel();
-            HideAuthPanel();
 
             // Add listeners
+            addProfileButton.onClick.AddListener(ShowAddProfilePanel);
+            addProfilePanel.ProfileAdded += _ => UpdateStoredUserProfiles();
             localhostButton.onClick.AddListener(() => serverInput.text = LOCALHOST_ADDRESS);
 
-            localGameButton.onClick.AddListener(TryConnectDummyServer);
+            testButton.onClick.AddListener(TryConnectDummyServer);
             quitButton.onClick.AddListener(QuitGame);
 
             loginButton.onClick.AddListener(TryConnectServer);
-            authLinkButton.onClick.AddListener(CopyAuthLink);
-            authCancelButton.onClick.AddListener(CancelAuth);
-            authConfirmButton.onClick.AddListener(ConfirmAuth);
-            authCodeInput.GetComponentInChildren<Button>().onClick.AddListener(PasteAuthCode);
 
             loginCloseButton.onClick.AddListener(HideLoginPanel);
             loginPanelButton.onClick.AddListener(ShowLoginPanel);
-            // Cancel auth, not just hide panel (so basically this button is totally the same as authCancelButton)...
-            authCloseButton.onClick.AddListener(CancelAuth);
 
             // Used for testing MC format code parsing
             // loadStateInfoText.text = StringConvert.MC2TMP("Hello world §a[§a§a-1, §a1 §6[Bl§b[HHH]ah] Hello §c[Color RE§rD]  §a1§r] (blah)");
