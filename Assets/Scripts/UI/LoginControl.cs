@@ -2,10 +2,13 @@ using System;
 using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
+using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
+using UnityEngine.Networking;
 
 using TMPro;
 
@@ -18,6 +21,7 @@ namespace CraftSharp.UI
     public class LoginControl : MonoBehaviour
     {
         private const string LOCALHOST_ADDRESS = "127.0.0.1";
+        private const int AVATAR_SIZE = 16;
 
         [SerializeField] private TMP_InputField serverInput;
         [SerializeField] private Button loginButton;
@@ -44,6 +48,7 @@ namespace CraftSharp.UI
         #nullable disable
 
         private readonly Dictionary<string, UserProfile> profileOptionsByText = new();
+        private readonly Dictionary<string, Sprite> avatarSpritesByName = new();
 
         /// <summary>
         /// Load server information in ServerIP and ServerPort variables from a "serverip:port" couple or server alias
@@ -432,13 +437,19 @@ namespace CraftSharp.UI
             foreach (var profile in UserProfileManager.Profiles)
             {
                 var optionText = profile.LoginName;
+                var avatarName = GetAvatarName(profile);
                 if (profile.Type == UserProfileType.Offline)
                 {
                     optionText += $" ({Translations.Get("login.offline")})";
                 }
 
-                profileDropDown.options.Add(new TMP_Dropdown.OptionData(optionText, defaultProfileIcon, Color.white));
+                var optionData = new TMP_Dropdown.OptionData(optionText, defaultProfileIcon, Color.white);
+                profileDropDown.options.Add(optionData);
                 profileOptionsByText[optionText] = profile;
+                if (!string.IsNullOrWhiteSpace(avatarName))
+                {
+                    StartCoroutine(LoadAvatarForOption(optionData, avatarName));
+                }
             }
 
             profileDropDown.interactable = UserProfileManager.Profiles.Count > 0;
@@ -455,6 +466,116 @@ namespace CraftSharp.UI
             }
 
             profileDropDown.RefreshShownValue();
+        }
+
+        private static string GetAvatarName(UserProfile profile)
+        {
+            var name = string.IsNullOrWhiteSpace(profile.PlayerName)
+                ? profile.LoginName?.Trim()
+                : profile.PlayerName.Trim();
+            if (string.IsNullOrWhiteSpace(name))
+                return string.Empty;
+            return PlayerInfo.IsValidName(name) ? name : string.Empty;
+        }
+
+        private static string GetAvatarCacheDirectory()
+        {
+            return Path.Combine(PathHelper.GetRootDirectory(), "Cached", "avatars");
+        }
+
+        private static string GetAvatarCachePath(string avatarName)
+        {
+            var safeName = SanitizeFileName(avatarName);
+            return Path.Combine(GetAvatarCacheDirectory(), $"{safeName}.png");
+        }
+
+        private static string SanitizeFileName(string name)
+        {
+            if (string.IsNullOrEmpty(name))
+                return "player";
+            var invalidChars = Path.GetInvalidFileNameChars();
+            var builder = new StringBuilder(name.Length);
+            foreach (var c in name)
+            {
+                builder.Append(invalidChars.Contains(c) ? '_' : c);
+            }
+            return builder.Length == 0 ? "player" : builder.ToString();
+        }
+
+        private IEnumerator LoadAvatarForOption(TMP_Dropdown.OptionData option, string avatarName)
+        {
+            var avatarKey = avatarName;
+            if (avatarSpritesByName.TryGetValue(avatarKey, out var cachedSprite) && cachedSprite != null)
+            {
+                option.image = cachedSprite;
+                profileDropDown.RefreshShownValue();
+                yield break;
+            }
+
+            var cacheDir = GetAvatarCacheDirectory();
+            if (!Directory.Exists(cacheDir))
+            {
+                Directory.CreateDirectory(cacheDir);
+            }
+
+            var cachePath = GetAvatarCachePath(avatarName);
+            if (File.Exists(cachePath))
+            {
+                try
+                {
+                    var bytes = File.ReadAllBytes(cachePath);
+                    if (bytes.Length > 0)
+                    {
+                        var texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+                        if (texture.LoadImage(bytes))
+                        {
+                            texture.filterMode = FilterMode.Point;
+                            var sprite = Sprite.Create(texture, new Rect(0F, 0F, texture.width, texture.height), new Vector2(0.5F, 0.5F));
+                            avatarSpritesByName[avatarKey] = sprite;
+                            option.image = sprite;
+                            profileDropDown.RefreshShownValue();
+                            yield break;
+                        }
+                        Destroy(texture);
+                    }
+                }
+                catch (Exception e)
+                {
+                    Debug.LogWarning($"Failed to load cached avatar '{avatarName}': {e.Message}");
+                }
+            }
+
+            var avatarUrl = $"https://minotar.net/avatar/{avatarName}/{AVATAR_SIZE}";
+            using (var request = UnityWebRequestTexture.GetTexture(avatarUrl))
+            {
+                yield return request.SendWebRequest();
+                if (request.result != UnityWebRequest.Result.Success)
+                {
+                    Debug.LogWarning($"Failed to download avatar '{avatarName}': {request.error}");
+                    yield break;
+                }
+
+                var texture = DownloadHandlerTexture.GetContent(request);
+                if (texture == null)
+                    yield break;
+                texture.filterMode = FilterMode.Point;
+
+                var sprite = Sprite.Create(texture, new Rect(0F, 0F, texture.width, texture.height), new Vector2(0.5F, 0.5F));
+                avatarSpritesByName[avatarKey] = sprite;
+                option.image = sprite;
+                profileDropDown.RefreshShownValue();
+
+                try
+                {
+                    var bytes = texture.EncodeToPNG();
+                    if (bytes != null && bytes.Length > 0)
+                        File.WriteAllBytes(cachePath, bytes);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogWarning($"Failed to cache avatar '{avatarName}': {e.Message}");
+                }
+            }
         }
 
         private void RemoveProfile(UserProfileType type, string loginName)

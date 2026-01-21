@@ -23,6 +23,8 @@ namespace CraftSharp
         public string LoginName = string.Empty;
         public UserProfileType Type = UserProfileType.Offline;
         public string MicrosoftRefreshToken = string.Empty;
+        public string PlayerName = string.Empty;
+        public string PlayerUuid = string.Empty;
     }
 
     [Serializable]
@@ -210,6 +212,8 @@ namespace CraftSharp
         {
             profile.LoginName = account;
             profile.MicrosoftRefreshToken = session.RefreshToken ?? string.Empty;
+            profile.PlayerName = session.PlayerName ?? string.Empty;
+            profile.PlayerUuid = session.PlayerId ?? string.Empty;
             AddOrUpdateProfile(profile);
         }
 
@@ -228,7 +232,9 @@ namespace CraftSharp
                 {
                     LoginName = login,
                     Type = UserProfileType.Microsoft,
-                    MicrosoftRefreshToken = session.RefreshToken ?? string.Empty
+                    MicrosoftRefreshToken = session.RefreshToken ?? string.Empty,
+                    PlayerName = session.PlayerName ?? string.Empty,
+                    PlayerUuid = session.PlayerId ?? string.Empty
                 });
                 added = true;
             }
@@ -243,7 +249,9 @@ namespace CraftSharp
                 {
                     LoginName = login,
                     Type = UserProfileType.Offline,
-                    MicrosoftRefreshToken = string.Empty
+                    MicrosoftRefreshToken = string.Empty,
+                    PlayerName = string.Empty,
+                    PlayerUuid = string.Empty
                 });
                 added = true;
             }
@@ -280,6 +288,8 @@ namespace CraftSharp
 
                 profile.LoginName = loginName;
                 profile.MicrosoftRefreshToken ??= string.Empty;
+                profile.PlayerName ??= string.Empty;
+                profile.PlayerUuid ??= string.Empty;
                 result.Add(profile);
             }
 
