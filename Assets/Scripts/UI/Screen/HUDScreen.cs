@@ -430,11 +430,11 @@ namespace CraftSharp.UI
                 displayedLatency = (int) Mathf.Lerp(displayedLatency, currentLatency, 0.55F);
                 
                 if (displayedLatency >= 500)
-                    latencyText.text =  $"<color=red>{displayedLatency} ms</color>";
+                    latencyText.text =  $"<color=#F66>{displayedLatency} ms</color>";
                 else if (displayedLatency >= 100)
-                    latencyText.text =  $"<color=orange>{displayedLatency} ms</color>";
+                    latencyText.text =  $"<color=#F70>{displayedLatency} ms</color>";
                 else
-                    latencyText.text =  $"{displayedLatency} ms";
+                    latencyText.text =  $"<color=#7F7>{displayedLatency} ms</color>";
             }
         }
 

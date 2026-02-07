@@ -3,7 +3,6 @@ using System.Net.Mail;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
-using CraftSharp;
 using CraftSharp.Protocol;
 
 namespace CraftSharp.UI

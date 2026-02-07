@@ -719,6 +719,7 @@ namespace CraftSharp.UI
             addProfileButton.onClick.AddListener(ShowAddProfilePanel);
             addProfilePanel.ProfileAdded += _ => UpdateStoredUserProfiles();
             localhostButton.onClick.AddListener(() => serverInput.text = LOCALHOST_ADDRESS);
+            manageServersButton.onClick.AddListener(() => serverListPanel.Show());
 
             testButton.onClick.AddListener(TryConnectDummyServer);
             quitButton.onClick.AddListener(QuitGame);
