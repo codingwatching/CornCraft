@@ -1,12 +1,13 @@
 {
   "dependencies": {
     "com.devbobcorn.craftsharp": {
-      "version": "file:com.devbobcorn.craftsharp",
+      "version": "https://github.com/DevBobcorn/CraftSharp.git",
       "depth": 0,
-      "source": "embedded",
+      "source": "git",
       "dependencies": {
         "com.unity.mathematics": "1.2.6"
-      }
+      },
+      "hash": "fb1253e0f06be5cc66d6a29432000f3de78a9053"
     },
     "com.devbobcorn.craftsharp-protocol": {
       "version": "file:com.devbobcorn.craftsharp-protocol",
@@ -42,7 +43,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.burst": {
-      "version": "1.8.28",
+      "version": "1.8.29",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -174,7 +175,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.recorder": {
-      "version": "5.1.5",
+      "version": "5.1.6",
       "depth": 0,
       "source": "registry",
       "dependencies": {
