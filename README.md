@@ -20,7 +20,7 @@ Recommended server versions for CornCraft are <code>1.16.5</code>, <code>1.17.1<
 For <code>1.19.1</code> or higher servers, it is also necessary to set <code>enforce-secure-profile</code> to <code>false</code> so that CornCraft can log in correctly.
 
 ## > Building & Running
-The project is made and tested with Unity 6000.3.1f1, so it is recommended to use this(or a newer) version of Unity to build this game.
+The project is made and tested with Unity 6000.3.9f1, so it is recommended to use this(or a newer) version of Unity to build this game.
 
 **Some third-party assets are not included in this repo**, for more information please see [here](./Assets/Third%20Party%20Assets.md).
 
