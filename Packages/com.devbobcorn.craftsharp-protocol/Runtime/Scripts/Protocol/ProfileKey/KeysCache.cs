@@ -74,8 +74,17 @@ namespace CraftSharp.Protocol.ProfileKey
         /// <returns>TRUE if keys are seeded from file</returns>
         public static bool InitializeDiskCache()
         {
+            updatetimer.Elapsed -= HandlePending;
             updatetimer.Elapsed += HandlePending;
             return LoadFromDisk();
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetForPlaySession()
+        {
+            updatetimer.Stop();
+            updatetimer.Elapsed -= HandlePending;
+            pendingadds.Clear();
         }
 
         /// <summary>

@@ -28,15 +28,21 @@ namespace CraftSharp.UI
         {
             client = curClient;
 
+            foreach (var screen in screenStack)
+                screen.IsActive = false;
+
+            screenStack.Clear();
+            screenRegistry.Clear();
+
             // Initialize screens
-            screenRegistry.Add(typeof (ChatScreen),       m_ChatScreen);
-            screenRegistry.Add(typeof (InventoryScreen),  m_InventoryScreen);
-            screenRegistry.Add(typeof (DeathScreen),      m_DeathScreen);
-            screenRegistry.Add(typeof (SignEditorScreen), m_SignEditorScreen);
-            screenRegistry.Add(typeof (HUDScreen),        m_HUDScreen);
-            screenRegistry.Add(typeof (PacketScreen),     m_PacketScreen);
-            screenRegistry.Add(typeof (LoadingScreen),    m_LoadingScreen);
-            screenRegistry.Add(typeof (PauseScreen),      m_PauseScreen);
+            screenRegistry[typeof (ChatScreen)]       = m_ChatScreen;
+            screenRegistry[typeof (InventoryScreen)]  = m_InventoryScreen;
+            screenRegistry[typeof (DeathScreen)]      = m_DeathScreen;
+            screenRegistry[typeof (SignEditorScreen)] = m_SignEditorScreen;
+            screenRegistry[typeof (HUDScreen)]        = m_HUDScreen;
+            screenRegistry[typeof (PacketScreen)]     = m_PacketScreen;
+            screenRegistry[typeof (LoadingScreen)]    = m_LoadingScreen;
+            screenRegistry[typeof (PauseScreen)]      = m_PauseScreen;
 
             // Push HUD Screen on start, before pushing Loading Screen
             PushScreen<HUDScreen>();

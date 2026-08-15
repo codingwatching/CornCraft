@@ -49,10 +49,8 @@ namespace CraftSharp.Event
                 if (registrations.actions != null)
                 {
                     registrations.actions -= callback;
-                    return;
                 }
             }
-            throw new Exception("Failed to remove listener");
         }
 
         public void Broadcast<T>(T message)

@@ -48,12 +48,21 @@ namespace CraftSharp
 
         public static BaseCornClient? CurrentClient => Instance.Client;
         public static void SetCurrentClient(BaseCornClient c) => Instance.Client = c;
+        public static void ClearCurrentClient(BaseCornClient c)
+        {
+            if (instance && instance.Client == c)
+                instance.Client = null;
+        }
 
         private static CornApp? instance;
         public static CornApp Instance
         {
             get
             {
+                if (instance)
+                    return instance;
+
+                instance = FindFirstObjectByType<CornApp>();
                 if (instance)
                     return instance;
                 
@@ -92,6 +101,15 @@ namespace CraftSharp
         }
 
         // Runs before a scene gets loaded
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetForPlaySession()
+        {
+            if (instance)
+                instance.Client = null;
+
+            instance = null;
+        }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         public static void InitializeApp()
         {

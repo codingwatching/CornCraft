@@ -21,13 +21,19 @@ namespace CraftSharp.Rendering
         {
             foreach (var mesh in DEFAULT_MESH_CACHE.Values)
             {
-                Object.Destroy(mesh);
+                if (Application.isPlaying)
+                    Object.Destroy(mesh);
+                else
+                    Object.DestroyImmediate(mesh);
             }
             DEFAULT_MESH_CACHE.Clear();
 
             foreach (var mesh in UNCACHED_ITEM_MESHES)
             {
-                Object.Destroy(mesh);
+                if (Application.isPlaying)
+                    Object.Destroy(mesh);
+                else
+                    Object.DestroyImmediate(mesh);
             }
             UNCACHED_ITEM_MESHES.Clear();
         }

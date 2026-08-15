@@ -93,8 +93,17 @@ namespace CraftSharp.Protocol.Session
         /// <returns>TRUE if session tokens are seeded from file</returns>
         public static bool InitializeDiskCache()
         {
+            updateTimer.Elapsed -= HandlePending;
             updateTimer.Elapsed += HandlePending;
             return LoadFromDisk();
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetForPlaySession()
+        {
+            updateTimer.Stop();
+            updateTimer.Elapsed -= HandlePending;
+            pendingAdds.Clear();
         }
 
         /// <summary>

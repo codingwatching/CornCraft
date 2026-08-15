@@ -119,6 +119,8 @@ namespace CraftSharp
 
         private readonly object movementLock = new();
         private readonly Dictionary<Guid, PlayerInfo> onlinePlayers = new();
+        private PlayerController.PlayerActionEventHandler? playerActionHandler;
+        private bool sessionInitialized;
         #endregion
 
         private void Awake() // In case where the client wasn't properly assigned before
@@ -129,8 +131,22 @@ namespace CraftSharp
             }
         }
 
+        private void OnEnable()
+        {
+            if (Application.isPlaying && sessionInitialized)
+                InitializeSession();
+        }
+
         private void Start()
         {
+            sessionInitialized = true;
+            InitializeSession();
+        }
+
+        private void InitializeSession()
+        {
+            CornApp.SetCurrentClient(this);
+
             // Set up screen control
             ScreenControl.SetClient(this);
             ScreenControl.SetLoadingScreen(true);
@@ -145,12 +161,14 @@ namespace CraftSharp
             PlayerController.DisablePhysics();
             
             // Add handlers for player controller
-            PlayerController.OnPlayerAction += actionType =>
+            playerActionHandler ??= actionType =>
             {
                 //Debug.Log(Translations.Get($"Player action: {actionType}"));
                 
                 SendEntityAction(actionType);
             };
+            PlayerController.OnPlayerAction -= playerActionHandler;
+            PlayerController.OnPlayerAction += playerActionHandler;
         }
 
         public override bool StartClient(StartLoginInfo info)
@@ -478,24 +496,38 @@ namespace CraftSharp
         /// </summary>
         public override void Disconnect()
         {
+            ShutdownConnection();
+
+            Loom.QueueOnMainThread(CornApp.BackToLogin);
+        }
+
+        private void OnDisable()
+        {
+            ShutdownConnection();
+        }
+
+        private void ShutdownConnection()
+        {
+            if (playerActionHandler is not null)
+                PlayerController.OnPlayerAction -= playerActionHandler;
+
             handler?.Disconnect();
             handler?.Dispose();
             handler = null;
 
-            timeoutDetector?.Item2.Cancel();
+            var detector = timeoutDetector;
             timeoutDetector = null;
+
+            detector?.Item2.Cancel();
+            if (detector is not null && detector.Item1 != Thread.CurrentThread && detector.Item1.IsAlive)
+                detector.Item1.Join(TimeSpan.FromSeconds(1));
+            detector?.Item2.Dispose();
 
             client?.Close();
             client = null;
-            
-            Loom.QueueOnMainThread(() =>
-            {
-                // Clear item mesh cache
-                ItemMeshBuilder.ClearMeshCache();
-                
-                // Return to login scene
-                CornApp.BackToLogin();
-            });
+
+            ItemMeshBuilder.ClearMeshCache();
+            CornApp.ClearCurrentClient(this);
         }
 
         /// <summary>

@@ -46,8 +46,25 @@ namespace CraftSharp
         public override bool CheckAddDragged(ItemStack slotItem, Func<ItemStack, bool> slotPredicate) => false;
         #endregion
 
+        private bool sessionInitialized;
+
+        private void OnEnable()
+        {
+            if (Application.isPlaying && sessionInitialized)
+                InitializeSession();
+        }
+
         private void Start()
         {
+            sessionInitialized = true;
+            InitializeSession();
+        }
+
+        private void InitializeSession()
+        {
+            inventories.Clear();
+            onlinePlayers.Clear();
+
             if (!CornApp.CurrentClient) // In case where the client wasn't properly assigned before
             {
                 CornApp.SetCurrentClient(this);
@@ -60,8 +77,8 @@ namespace CraftSharp
             // Set up screen control
             ScreenControl.SetClient(this);
             
-            onlinePlayers.Add(LOCAL_UUID, new PlayerInfo(LOCAL_UUID, DUMMY_USERNAME, null,
-                    (int) GameMode, 0, DUMMY_USERNAME, null, null, null));
+            onlinePlayers[LOCAL_UUID] = new PlayerInfo(LOCAL_UUID, DUMMY_USERNAME, null,
+                    (int) GameMode, 0, DUMMY_USERNAME, null, null, null);
             
             // Setup chunk render manager
             ChunkRenderManager.SetClient(this);
@@ -177,11 +194,21 @@ namespace CraftSharp
 
         public override void Disconnect()
         {
-            // Clear item mesh cache
-            ItemMeshBuilder.ClearMeshCache();
+            ShutdownClient();
             
             // Return to login scene
             CornApp.BackToLogin();
+        }
+
+        private void OnDisable()
+        {
+            ShutdownClient();
+        }
+
+        private void ShutdownClient()
+        {
+            ItemMeshBuilder.ClearMeshCache();
+            CornApp.ClearCurrentClient(this);
         }
 
         #region Thread-Invoke: Cross-thread method calls
