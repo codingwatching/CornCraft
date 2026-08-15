@@ -762,6 +762,7 @@ namespace CraftSharp.Rendering
             chunkRendersBeingBuilt.Add(chunkRender);
 
             chunkRender.TokenSource = new();
+            var buildGeneration = sessionGeneration;
 
             Task.Run(() =>
             {
@@ -802,7 +803,7 @@ namespace CraftSharp.Rendering
 
                 Loom.QueueOnMainThread(() =>
                 {
-                    if (chunkRender)
+                    if (buildGeneration == sessionGeneration && chunkRender)
                     {
                         chunkRendersBeingBuilt.Remove(chunkRender);
                     }
@@ -1168,6 +1169,7 @@ namespace CraftSharp.Rendering
         }
 
         private Action<BlockPredictionEvent> blockPredictionCallback;
+        private int sessionGeneration;
 
         private void Awake()
         {
@@ -1178,6 +1180,8 @@ namespace CraftSharp.Rendering
 
         private void Start()
         {
+            sessionGeneration++;
+
             // Clear loaded things
             blockEntityPrefabs.Clear();
             
@@ -1217,8 +1221,27 @@ namespace CraftSharp.Rendering
 
         private void OnDestroy()
         {
+            CancelPendingBuilds();
+
             if (blockPredictionCallback is not null)
                 EventManager.Instance.Unregister(blockPredictionCallback);
+        }
+
+        private void OnDisable()
+        {
+            sessionGeneration++;
+            CancelPendingBuilds();
+        }
+
+        private void CancelPendingBuilds()
+        {
+            foreach (var chunkRender in chunkRendersBeingBuilt.ToArray())
+                chunkRender.TokenSource?.Cancel();
+
+            chunkRendersBeingBuilt.Clear();
+            chunkRendersToBeBuilt.Clear();
+            chunkRendersToBeBuiltAsSet.Clear();
+            lightUpdateRequests.Clear();
         }
 
         private void Update()

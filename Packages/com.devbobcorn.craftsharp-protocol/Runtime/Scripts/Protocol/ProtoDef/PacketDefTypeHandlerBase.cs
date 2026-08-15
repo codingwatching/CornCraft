@@ -480,8 +480,10 @@ namespace CraftSharp.Protocol.ProtoDef
             }
         }
 
+        [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
         public static void ResetLoadedTypes()
         {
+            CUSTOM_DEF_TYPES.Clear();
             LOADED_DEF_TYPES.Clear();
 
             var native = GetNativeTypes();

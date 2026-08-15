@@ -4,18 +4,21 @@ using System.Collections.Generic;
 
 namespace CraftSharp.Protocol.Handlers
 {
-    internal static class DeclareCommands
+    internal sealed class DeclareCommands
     {
-        private static int RootIdx;
-        private static CommandNode[] Nodes = Array.Empty<CommandNode>();
+        private int RootIdx;
+        private CommandNode[] Nodes = Array.Empty<CommandNode>();
 
-        public static void Read(MinecraftDataTypes dataTypes, Queue<byte> packetData, int protocolVersion)
+        public bool Read(MinecraftDataTypes dataTypes, Queue<byte> packetData, int protocolVersion)
         {
+            RootIdx = 0;
+            Nodes = Array.Empty<CommandNode>();
+
             // TODO: Fix this
             // It crashes in 1.20.6+ , could not figure out why
             // it's hard to debug, so I'll just disable it for now
             if(protocolVersion > ProtocolMinecraft.MC_1_20_4_Version)
-                return;
+                return false;
             
             int count = DataTypes.ReadNextVarInt(packetData);
             Nodes = new CommandNode[count];
@@ -162,9 +165,10 @@ namespace CraftSharp.Protocol.Handlers
             RootIdx = DataTypes.ReadNextVarInt(packetData);
 
             //ConsoleIO.OnDeclareMinecraftCommand(ExtractRootCommand());
+            return true;
         }
 
-        private static string[] ExtractRootCommand()
+        private string[] ExtractRootCommand()
         {
             List<string> commands = new();
             CommandNode root = Nodes[RootIdx];
@@ -177,14 +181,17 @@ namespace CraftSharp.Protocol.Handlers
             return commands.ToArray();
         }
 
-        public static List<Tuple<string, string>> CollectSignArguments(string command)
+        public List<Tuple<string, string>> CollectSignArguments(string command)
         {
             List<Tuple<string, string>> needSigned = new();
+            if (Nodes.Length == 0 || (uint) RootIdx >= (uint) Nodes.Length)
+                return needSigned;
+
             CollectSignArguments(RootIdx, command, needSigned);
             return needSigned;
         }
 
-        private static void CollectSignArguments(int NodeIdx, string command, List<Tuple<string, string>> arguments)
+        private void CollectSignArguments(int NodeIdx, string command, List<Tuple<string, string>> arguments)
         {
             CommandNode node = Nodes[NodeIdx];
             string last_arg = command;

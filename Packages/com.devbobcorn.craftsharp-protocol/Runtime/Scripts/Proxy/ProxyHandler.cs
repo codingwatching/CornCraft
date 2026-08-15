@@ -15,8 +15,10 @@ namespace CraftSharp.Proxy
         public enum Type { HTTP, SOCKS4, SOCKS4a, SOCKS5 };
 
         private static readonly ProxyClientFactory factory = new();
-        private static IProxyClient proxy;
         private static bool proxy_ok = false;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetForPlaySession() => proxy_ok = false;
 
         /// <summary>
         /// Create a regular TcpClient or a proxied TcpClient according to the app Settings.
@@ -31,6 +33,7 @@ namespace CraftSharp.Proxy
             {
                 if (login ? ProtocolSettings.ProxyEnabledLogin : ProtocolSettings.ProxyEnabledInGame)
                 {
+                    IProxyClient proxy;
                     ProxyType innerProxytype = ProxyType.Http;
 
                     switch (ProtocolSettings.ProxyType)
@@ -60,7 +63,6 @@ namespace CraftSharp.Proxy
             catch (ProxyException e)
             {
                 Debug.Log(e.Message);
-                proxy = null;
                 throw new SocketException((int)SocketError.HostUnreachable);
             }
         }

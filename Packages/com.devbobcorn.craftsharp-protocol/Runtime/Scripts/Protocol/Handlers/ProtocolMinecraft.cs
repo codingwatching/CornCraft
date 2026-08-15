@@ -64,6 +64,7 @@ namespace CraftSharp.Protocol.Handlers
         private int oldSamplesWeight = 1;
 
         private bool receiveDeclareCommands = false, receivePlayerInfo = false;
+        private readonly DeclareCommands declareCommands = new();
         private readonly object MessageSigningLock = new();
         private Guid chatUUID = Guid.NewGuid();
         private int pendingAcknowledgments = 0, messageIndex = 0;
@@ -705,8 +706,7 @@ namespace CraftSharp.Protocol.Handlers
                 case PacketTypesIn.DeclareCommands:
                     if (protocolVersion >= MC_1_19_1_Version)
                     {
-                        DeclareCommands.Read(dataTypes, packetData, protocolVersion);
-                        receiveDeclareCommands = true;
+                        receiveDeclareCommands = declareCommands.Read(dataTypes, packetData, protocolVersion);
                         if (receivePlayerInfo)
                             handler.SetCanSendMessage(true);
                     }
@@ -3015,7 +3015,7 @@ namespace CraftSharp.Protocol.Handlers
                 List<Tuple<string, string>>? needSigned = null; // List< Argument Name, Argument Value >
                 if (playerKeyPair != null && isOnlineMode && protocolVersion >= MC_1_19_1_Version
                     && ProtocolSettings.LoginWithSecureProfile && ProtocolSettings.SignMessageInCommand)
-                    needSigned = DeclareCommands.CollectSignArguments(command);
+                    needSigned = declareCommands.CollectSignArguments(command);
 
                 lock (MessageSigningLock)
                 {

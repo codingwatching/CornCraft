@@ -35,6 +35,7 @@ namespace CraftSharp.Event
             else
             {
                 var registrations = eventTable[t] as EventRegistrations<T>;
+                registrations.actions -= callback;
                 registrations.actions += callback;
             }
         }

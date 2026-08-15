@@ -78,10 +78,10 @@ namespace CraftSharp
         {
             ParserProtocol = version;
 
+            PacketDefTypeHandlerBase.ResetLoadedTypes();
+
             if (version >= ProtocolMinecraft.MC_1_21_1_Version)
                 return;
-
-            PacketDefTypeHandlerBase.ResetLoadedTypes();
 
             var jsonPath = PathHelper.GetExtraDataFile($"protos{Path.DirectorySeparatorChar}protocol-{version}.json");
 

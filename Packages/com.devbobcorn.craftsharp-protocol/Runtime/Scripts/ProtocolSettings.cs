@@ -8,6 +8,13 @@ namespace CraftSharp
         private static string version = "UwU";
         private static bool versionInitialized = false;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetForPlaySession()
+        {
+            version = "UwU";
+            versionInitialized = false;
+        }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void InitializeVersion()
         {
@@ -46,10 +53,10 @@ namespace CraftSharp
         public static bool ProxyEnabledLogin { get; set; } = false;
         public static bool ProxyEnabledInGame { get; set; } = false;
         public static ProxyHandler.Type ProxyType { get; set; }
-        public static string ProxyHost { get; set; }
+        public static string ProxyHost { get; set; } = string.Empty;
         public static int ProxyPort { get; set; }
-        public static string ProxyUsername { get; set; }
-        public static string ProxyPassword { get; set; }
+        public static string ProxyUsername { get; set; } = string.Empty;
+        public static string ProxyPassword { get; set; } = string.Empty;
 
         // Minecraft Settings
         public static MCSettings MCSettings { get; } = new();
