@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace CraftSharp.Rendering
 {
-    public class ChestBlockEntityRender : BlockEntityRender
+    public class ChestBlockEntityRender : BlockEntityRender, IEventListener
     {
         private static readonly ResourceLocation CHEST_ID = new("chest");
         private static readonly ResourceLocation CHEST_LEFT_ID = new("chest_left");
@@ -34,9 +34,15 @@ namespace CraftSharp.Rendering
                 }
             };
             
-            EventManager.Instance.Register(blockActionCallback);
+            RebindEventListeners();
 
             base.Initialize(blockLoc, blockState, blockEntityType, tags);
+        }
+
+        public void RebindEventListeners()
+        {
+            if (blockActionCallback is not null)
+                EventManager.Instance.Register(blockActionCallback);
         }
 
         private void OnDestroy()

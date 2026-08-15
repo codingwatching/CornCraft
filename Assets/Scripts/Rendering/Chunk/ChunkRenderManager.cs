@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 using UnityEngine;
@@ -16,7 +17,7 @@ using Unity.VectorGraphics;
 
 namespace CraftSharp.Rendering
 {
-    public class ChunkRenderManager : MonoBehaviour, IChunkRenderManager
+    public class ChunkRenderManager : MonoBehaviour, IChunkRenderManager, IEventListener
     {
         [SerializeField] private Transform blockEntityParent;
 
@@ -152,6 +153,23 @@ namespace CraftSharp.Rendering
         private static readonly Queue<int> dataBuildTimeRecord = new(Enumerable.Repeat(0, 200));
         private static readonly Queue<int> vertexBuildTimeRecord = new(Enumerable.Repeat(0, 200));
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetTimingRecords()
+        {
+            lock (dataBuildTimeRecord)
+            {
+                dataBuildTimeSum = 0;
+                dataBuildTimeRecord.Clear();
+                for (var i = 0; i < 200; i++) dataBuildTimeRecord.Enqueue(0);
+            }
+            lock (vertexBuildTimeRecord)
+            {
+                vertexBuildTimeSum = 0;
+                vertexBuildTimeRecord.Clear();
+                for (var i = 0; i < 200; i++) vertexBuildTimeRecord.Enqueue(0);
+            }
+        }
+
         public string GetDebugInfo()
         {
             return $"Nearby Chunks To Check: {nearbyChunkCoordsToBeChecked.Count}/{nearbyChunkCoords.Count}\nUnfinished Light Updates: {lightUpdateUnfinished.Count}\nQueued Chunks: {chunkRendersToBeBuiltAsSet.Count}\nBuilding Chunks: {chunkRendersBeingBuilt.Count}\n- Data Build Time Avg: {dataBuildTimeSum / 200F:0.00} ms\n- Vert Build Time Avg: {vertexBuildTimeSum / 200F:0.00} ms\nBlock Entity Count: {blockEntityRenders.Count}";
@@ -285,16 +303,25 @@ namespace CraftSharp.Rendering
         /// <summary>
         /// Should be invoked using a Task or worker thread
         /// </summary>
-        private void RecalculateBlockLight(int3 chunkPos)
+        private void RecalculateBlockLight(int3 chunkPos, int generation, CancellationToken cancellationToken)
         {
+            if (!IsSessionCurrent(generation, cancellationToken)) return;
+
             // Recalculate block light
             var result = lightCalc.RecalculateLightValues(world, chunkPos);
 
             // Write back updated light values
-            world.SetBlockLightForChunk(chunkPos.x, chunkPos.y, chunkPos.z, result);
+            lock (sessionLock)
+            {
+                if (!IsSessionCurrent(generation, cancellationToken)) return;
+
+                world.SetBlockLightForChunk(chunkPos.x, chunkPos.y, chunkPos.z, result);
+            }
 
             Loom.QueueOnMainThread(() =>
             {
+                if (!IsSessionCurrent(generation, cancellationToken)) return;
+
                 lightUpdateUnfinished.Remove(chunkPos);
 
                 QueueChunkBuildAfterLightUpdate(chunkPos.x, chunkPos.y, chunkPos.z);
@@ -309,6 +336,7 @@ namespace CraftSharp.Rendering
         /// <param name="doImmediateBuild">Whether to immediately rebuild chunk mesh</param>
         public void SetBlock(BlockLoc blockLoc, Block block, bool doImmediateBuild = false)
         {
+            GetSessionContext(out var generation, out var cancellationToken);
             var chunkX = blockLoc.GetChunkX();
             var chunkZ = blockLoc.GetChunkZ();
             var column = GetChunkColumn(chunkX, chunkZ);
@@ -332,6 +360,8 @@ namespace CraftSharp.Rendering
             // Block render is considered separately even if chunk data is not present
             Loom.QueueOnMainThread(() =>
             {
+                if (!IsSessionCurrent(generation, cancellationToken)) return;
+
                 // Auto-create block entity if present
                 if (BlockEntityTypePalette.INSTANCE.GetBlockEntityForBlock(block.BlockId, out BlockEntityType blockEntityType))
                 {
@@ -761,11 +791,14 @@ namespace CraftSharp.Rendering
 
             chunkRendersBeingBuilt.Add(chunkRender);
 
-            chunkRender.TokenSource = new();
-            var buildGeneration = sessionGeneration;
+            GetSessionContext(out var buildGeneration, out var sessionToken);
+            chunkRender.TokenSource = CancellationTokenSource.CreateLinkedTokenSource(sessionToken);
+            var buildToken = chunkRender.TokenSource.Token;
 
             Task.Run(() =>
             {
+                if (!IsSessionCurrent(buildGeneration, buildToken)) return;
+
                 var sw = new System.Diagnostics.Stopwatch();
                 sw.Start();
 
@@ -787,7 +820,7 @@ namespace CraftSharp.Rendering
                 sw.Restart();
 
                 // Build chunk vertex
-                builder.Build(buildData, chunkRender);
+                builder.Build(buildData, chunkRender, buildToken);
 
                 time = (int) sw.ElapsedMilliseconds;
 
@@ -803,13 +836,13 @@ namespace CraftSharp.Rendering
 
                 Loom.QueueOnMainThread(() =>
                 {
-                    if (buildGeneration == sessionGeneration && chunkRender)
+                    if (IsSessionCurrent(buildGeneration, buildToken) && chunkRender)
                     {
                         chunkRendersBeingBuilt.Remove(chunkRender);
                     }
                 });
 
-            }, chunkRender.TokenSource.Token);
+            }, buildToken);
         }
 
         private void BuildChunkRenderIfNotEmpty(ChunkRender chunkRender)
@@ -831,12 +864,15 @@ namespace CraftSharp.Rendering
         /// <param name="chunkZ"></param>
         public void UnloadChunkColumn(int chunkX, int chunkZ)
         {
+            GetSessionContext(out var generation, out var cancellationToken);
             world[chunkX, chunkZ] = null;
 
             int2 chunkCoord = new(chunkX, chunkZ);
 
             Loom.QueueOnMainThread(() =>
             {
+                if (!IsSessionCurrent(generation, cancellationToken)) return;
+
                 if (renderColumns.ContainsKey(chunkCoord))
                 {
                     var column = renderColumns[chunkCoord];
@@ -968,40 +1004,52 @@ namespace CraftSharp.Rendering
 
         public void InitializeBoxTerrainCollider(BlockLoc playerBlockLoc, Action callback = null)
         {
+            GetSessionContext(out var generation, out var cancellationToken);
             Task.Run(async () =>
             {
-                // Wait for old data to be cleared up
-                await Task.Delay(100);
-
-                int chunkX = playerBlockLoc.GetChunkX();
-                int chunkZ = playerBlockLoc.GetChunkZ();
-
-                int delayCount = 50; // Max delay time to stop waiting forever
-
-                while (!world.IsChunkColumnLoaded(chunkX, chunkZ) && delayCount > 0)
+                try
                 {
-                    // Wait until the chunk column data is ready
-                    await Task.Delay(100);
-                    delayCount--;
+                    // Wait for old data to be cleared up
+                    await Task.Delay(100, cancellationToken);
+
+                    int chunkX = playerBlockLoc.GetChunkX();
+                    int chunkZ = playerBlockLoc.GetChunkZ();
+
+                    int delayCount = 50; // Max delay time to stop waiting forever
+
+                    while (!world.IsChunkColumnLoaded(chunkX, chunkZ) && delayCount > 0)
+                    {
+                        // Wait until the chunk column data is ready
+                        await Task.Delay(100, cancellationToken);
+                        delayCount--;
+                    }
+
+                    if (!IsSessionCurrent(generation, cancellationToken)) return;
+
+                    Loom.QueueOnMainThread(() =>
+                    {
+                        if (!IsSessionCurrent(generation, cancellationToken)) return;
+
+                        terrainAABBs.Clear();
+                        liquidAABBs.Clear();
+                        terrainAABBMap.Clear();
+                        liquidAABBMap.Clear();
+
+                        ChunkRenderBuilder.BuildTerrainAABBs(world, playerBlockLoc, _worldOriginOffset,
+                            terrainAABBs, liquidAABBs, terrainAABBMap, liquidAABBMap);
+
+                        // Set last player location
+                        lastPlayerBlockLoc = playerBlockLoc;
+                        lastPlayerChunkLoc = new int2(playerBlockLoc.GetChunkX(), playerBlockLoc.GetChunkZ());
+
+                        callback?.Invoke();
+                    });
                 }
-
-                Loom.QueueOnMainThread(() =>
+                catch (OperationCanceledException)
                 {
-                    terrainAABBs.Clear();
-                    liquidAABBs.Clear();
-                    terrainAABBMap.Clear();
-                    liquidAABBMap.Clear();
-
-                    ChunkRenderBuilder.BuildTerrainAABBs(world, playerBlockLoc, _worldOriginOffset,
-                        terrainAABBs, liquidAABBs, terrainAABBMap, liquidAABBMap);
-
-                    // Set last player location
-                    lastPlayerBlockLoc = playerBlockLoc;
-                    lastPlayerChunkLoc = new int2(playerBlockLoc.GetChunkX(), playerBlockLoc.GetChunkZ());
-
-                    callback?.Invoke();
-                });
-            });
+                    // Session ended while waiting for chunk data.
+                }
+            }, cancellationToken);
         }
 
         public void RebuildTerrainBoxCollider(BlockLoc playerBlockLoc)
@@ -1169,7 +1217,23 @@ namespace CraftSharp.Rendering
         }
 
         private Action<BlockPredictionEvent> blockPredictionCallback;
+        private readonly object sessionLock = new();
+        private CancellationTokenSource sessionCancellation;
         private int sessionGeneration;
+
+        private void GetSessionContext(out int generation, out CancellationToken cancellationToken)
+        {
+            lock (sessionLock)
+            {
+                generation = sessionGeneration;
+                cancellationToken = sessionCancellation?.Token ?? new CancellationToken(true);
+            }
+        }
+
+        private bool IsSessionCurrent(int generation, CancellationToken cancellationToken)
+        {
+            return !cancellationToken.IsCancellationRequested && generation == Volatile.Read(ref sessionGeneration);
+        }
 
         private void Awake()
         {
@@ -1178,10 +1242,18 @@ namespace CraftSharp.Rendering
             chunkRenderColumnPool = new(CreateNewChunkRenderColumn, null, OnReleaseChunkRenderColumn, null, false, 500);
         }
 
+        private void OnEnable()
+        {
+            lock (sessionLock)
+            {
+                sessionGeneration++;
+                sessionCancellation?.Cancel();
+                sessionCancellation = new CancellationTokenSource();
+            }
+        }
+
         private void Start()
         {
-            sessionGeneration++;
-
             // Clear loaded things
             blockEntityPrefabs.Clear();
             
@@ -1216,7 +1288,13 @@ namespace CraftSharp.Rendering
                 });
             };
 
-            EventManager.Instance.Register(blockPredictionCallback);
+            RebindEventListeners();
+        }
+
+        public void RebindEventListeners()
+        {
+            if (blockPredictionCallback is not null)
+                EventManager.Instance.Register(blockPredictionCallback);
         }
 
         private void OnDestroy()
@@ -1229,7 +1307,11 @@ namespace CraftSharp.Rendering
 
         private void OnDisable()
         {
-            sessionGeneration++;
+            lock (sessionLock)
+            {
+                sessionGeneration++;
+                sessionCancellation?.Cancel();
+            }
             CancelPendingBuilds();
         }
 
@@ -1242,6 +1324,7 @@ namespace CraftSharp.Rendering
             chunkRendersToBeBuilt.Clear();
             chunkRendersToBeBuiltAsSet.Clear();
             lightUpdateRequests.Clear();
+            lightUpdateUnfinished.Clear();
         }
 
         private void Update()
@@ -1259,6 +1342,7 @@ namespace CraftSharp.Rendering
             {
                 var chunkPos = lightUpdateRequests.First();
                 lightUpdateRequests.Remove(chunkPos);
+                GetSessionContext(out var generation, out var cancellationToken);
 
                 //Debug.Log($"Queued light update for chunk [{chunkPos.x}, {chunkPos.y}, {chunkPos.z}]");
 
@@ -1266,13 +1350,13 @@ namespace CraftSharp.Rendering
                 {
                     try
                     {
-                        RecalculateBlockLight(chunkPos);
+                        RecalculateBlockLight(chunkPos, generation, cancellationToken);
                     }
                     catch (Exception e)
                     {
                         Debug.LogError(e);
                     }
-                });
+                }, cancellationToken);
                 newCount--;
             }
 

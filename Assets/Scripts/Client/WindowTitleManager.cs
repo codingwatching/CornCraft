@@ -13,6 +13,9 @@ namespace CraftSharp
         private static readonly string DefaultTitle = Application.productName;
         private static string currentTitle = DefaultTitle;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetForPlaySession() => currentTitle = DefaultTitle;
+
         public static void SetDefaultTitle()
         {
             SetTitle(DefaultTitle);

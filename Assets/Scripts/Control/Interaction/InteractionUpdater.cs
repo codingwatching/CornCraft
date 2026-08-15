@@ -43,7 +43,7 @@ namespace CraftSharp.Control
         }
     }
 
-    public class InteractionUpdater : MonoBehaviour
+    public class InteractionUpdater : MonoBehaviour, IEventListener
     {
         public static readonly ResourceLocation BLOCK_PARTICLE_ID = new("block");
         private const int MAX_INTERACTION_DISTANCE = 5;
@@ -862,7 +862,6 @@ namespace CraftSharp.Control
                 // Held item changed, check for interaction activity change
                 UpdateBlockTriggerInteractionsActivity();
             };
-            EventManager.Instance.Register(heldItemChangeCallback);
 
             harvestInteractionUpdateCallback = e =>
             {
@@ -886,7 +885,6 @@ namespace CraftSharp.Control
                     }
                 }
             };
-            EventManager.Instance.Register(harvestInteractionUpdateCallback);
 
             triggerInteractionExecutionEvent = e =>
             {
@@ -897,7 +895,17 @@ namespace CraftSharp.Control
                     triggerInteractionInfo.UpdateInteraction(client);
                 }
             };
-            EventManager.Instance.Register(triggerInteractionExecutionEvent);
+            RebindEventListeners();
+        }
+
+        public void RebindEventListeners()
+        {
+            if (heldItemChangeCallback is not null)
+                EventManager.Instance.Register(heldItemChangeCallback);
+            if (triggerInteractionExecutionEvent is not null)
+                EventManager.Instance.Register(triggerInteractionExecutionEvent);
+            if (harvestInteractionUpdateCallback is not null)
+                EventManager.Instance.Register(harvestInteractionUpdateCallback);
         }
 
         private void StartDiggingProcess(Block block, BlockLoc blockLoc, Direction direction, PlayerStatus status, bool instaBreakOnly = false)

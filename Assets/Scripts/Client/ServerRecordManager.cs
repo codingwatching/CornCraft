@@ -118,6 +118,14 @@ namespace CraftSharp
         private static bool loaded;
         private static int selectedIndex;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetForPlaySession()
+        {
+            servers.Clear();
+            loaded = false;
+            selectedIndex = 0;
+        }
+
         public static IReadOnlyList<ServerRecord> Servers => servers;
 
         public static int SelectedIndex

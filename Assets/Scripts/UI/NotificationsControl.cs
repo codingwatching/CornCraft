@@ -5,7 +5,7 @@ using CraftSharp.Event;
 
 namespace CraftSharp.UI
 {
-    public class NotificationsControl : MonoBehaviour
+    public class NotificationsControl : MonoBehaviour, IEventListener
     {
         [SerializeField] private GameObject notificationPrefab;
         [SerializeField] private RectTransform container;
@@ -43,7 +43,13 @@ namespace CraftSharp.UI
                 nextNumeralID++;
             };
 
-            EventManager.Instance.Register(showCallback);
+            RebindEventListeners();
+        }
+
+        public void RebindEventListeners()
+        {
+            if (showCallback is not null)
+                EventManager.Instance.Register(showCallback);
         }
 
         private void OnDestroy()

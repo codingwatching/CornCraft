@@ -12,7 +12,7 @@ using CraftSharp.Rendering;
 namespace CraftSharp.UI
 {
     [RequireComponent(typeof (ScrollRect))]
-    public class InteractionPanel : MonoBehaviour
+    public class InteractionPanel : MonoBehaviour, IEventListener
     {
         private static readonly int SHOW_HASH = Animator.StringToHash("Show");
         private static readonly int HIDE_HASH = Animator.StringToHash("Hide");
@@ -117,10 +117,19 @@ namespace CraftSharp.UI
                 }
             };
 
-            EventManager.Instance.Register(addCallback);
-            EventManager.Instance.Register(removeCallback);
-            EventManager.Instance.Register(harvestInteractionUpdateCallback);
-            EventManager.Instance.Register(targetBlockLocChangeEvent);
+            RebindEventListeners();
+        }
+
+        public void RebindEventListeners()
+        {
+            if (addCallback is not null)
+                EventManager.Instance.Register(addCallback);
+            if (removeCallback is not null)
+                EventManager.Instance.Register(removeCallback);
+            if (harvestInteractionUpdateCallback is not null)
+                EventManager.Instance.Register(harvestInteractionUpdateCallback);
+            if (targetBlockLocChangeEvent is not null)
+                EventManager.Instance.Register(targetBlockLocChangeEvent);
         }
 
         public void UpdateItemIconsAndTargetHintVisibility(bool visible)

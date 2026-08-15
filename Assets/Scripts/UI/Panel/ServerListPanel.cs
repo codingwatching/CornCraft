@@ -27,6 +27,26 @@ namespace CraftSharp.UI
         private int refreshToken = 0;
         private readonly ConcurrentQueue<Action> mainThreadActions = new();
         private bool isActive = true;
+        private Action<ServerRecord> serverAddedHandler;
+        private int sessionGeneration;
+
+        private void OnEnable()
+        {
+            isActive = true;
+            sessionGeneration++;
+            serverAddedHandler ??= _ => RefreshList();
+            addServerPanel.ServerAdded -= serverAddedHandler;
+            addServerPanel.ServerAdded += serverAddedHandler;
+        }
+
+        private void OnDisable()
+        {
+            isActive = false;
+            sessionGeneration++;
+            refreshToken++;
+            addServerPanel.ServerAdded -= serverAddedHandler;
+            while (mainThreadActions.TryDequeue(out _)) { }
+        }
 
         /// <summary>
         /// Hides the panel
@@ -60,7 +80,6 @@ namespace CraftSharp.UI
             addButton.onClick.AddListener(() => addServerPanel.Show());
             selectButton.onClick.AddListener(SelectServer);
             removeButton.onClick.AddListener(RemoveServer);
-            addServerPanel.ServerAdded += (_) => RefreshList();
         }
 
         private void Update()
@@ -73,9 +92,7 @@ namespace CraftSharp.UI
 
         private void OnDestroy()
         {
-            isActive = false;
-            refreshToken++;
-            while (mainThreadActions.TryDequeue(out _)) { }
+            OnDisable();
         }
 
         private void RefreshList()
@@ -156,6 +173,7 @@ namespace CraftSharp.UI
 
         private async Task RequestStatusAndUpdateAsync(ServerRecord server, IconListItem item, int token)
         {
+            int generation = sessionGeneration;
             var protocolVersion = ProtocolHandler.GetMinSupported();
             var info = await Task.Run(() => ServerRecordManager.PingServer(server, protocolVersion)).ConfigureAwait(false);
             if (info != null)
@@ -167,12 +185,12 @@ namespace CraftSharp.UI
                 Debug.LogWarning($"Ping failed: {server.DisplayName} ({server.Address}:{server.Port})");
             }
 
-            if (!isActive || token != refreshToken)
+            if (!isActive || token != refreshToken || generation != sessionGeneration)
                 return;
 
             mainThreadActions.Enqueue(() =>
             {
-                if (!isActive || token != refreshToken)
+                if (!isActive || token != refreshToken || generation != sessionGeneration)
                     return;
 
                 if (item == null)

@@ -7,7 +7,7 @@ using CraftSharp.Resource;
 
 namespace CraftSharp.Rendering
 {
-    public class ParticleRenderManager : MonoBehaviour
+    public class ParticleRenderManager : MonoBehaviour, IEventListener
     {
         private readonly Dictionary<ParticleExtraDataType, IParticleRender> particleRenders = new();
 
@@ -16,6 +16,7 @@ namespace CraftSharp.Rendering
         #nullable enable
 
         private Action<ParticlesEvent>? particlesCallback;
+        private GameObject? blockParticleRenderObject;
 
         #nullable disable
 
@@ -33,11 +34,7 @@ namespace CraftSharp.Rendering
 
         private void Start()
         {
-            var blockParticleRenderObj = new GameObject("Block Particle Render");
-            blockParticleRenderObj.transform.SetParent(transform);
-            var blockParticleRender = blockParticleRenderObj.AddComponent<BlockParticleRender>();
-
-            particleRenders.Add(ParticleExtraDataType.Block, blockParticleRender);
+            ResetRenderer();
 
             particlesCallback = (e) =>
             {
@@ -51,7 +48,40 @@ namespace CraftSharp.Rendering
                 }
             };
 
-            EventManager.Instance.Register(particlesCallback);
+            RebindEventListeners();
+        }
+
+        private void OnEnable()
+        {
+            if (particlesCallback is not null)
+            {
+                ResetRenderer();
+                RebindEventListeners();
+            }
+        }
+
+        private void ResetRenderer()
+        {
+            initialized = false;
+            particleRenders.Clear();
+
+            if (blockParticleRenderObject)
+            {
+                if (Application.isPlaying)
+                    Destroy(blockParticleRenderObject);
+                else
+                    DestroyImmediate(blockParticleRenderObject);
+            }
+
+            blockParticleRenderObject = new GameObject("Block Particle Render");
+            blockParticleRenderObject.transform.SetParent(transform, false);
+            particleRenders[ParticleExtraDataType.Block] = blockParticleRenderObject.AddComponent<BlockParticleRender>();
+        }
+
+        public void RebindEventListeners()
+        {
+            if (particlesCallback is not null)
+                EventManager.Instance.Register(particlesCallback);
         }
 
         private void Update()

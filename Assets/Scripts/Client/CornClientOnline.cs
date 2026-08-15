@@ -75,8 +75,6 @@ namespace CraftSharp
         private Tuple<Thread, CancellationTokenSource>? timeoutDetector = null;
         #endregion
 
-        #nullable disable
-
         #region Players and Entities
         private bool locationReceived = false;
         private readonly EntitySpawnData _clientEntitySpawn = new(CLIENT_ENTITY_ID_INTERNAL, EntityType.DUMMY_ENTITY_TYPE, Location.Zero);
@@ -97,7 +95,7 @@ namespace CraftSharp
             return receivedRecipes.TryGetValue(recipeTypeId, out var list) ? list : new List<RecipeExtraData>(0);
         }
         
-        private ItemStack dragStartCursorItemClone; // Keep a copy of cursor item before drag start
+        private ItemStack? dragStartCursorItemClone; // Keep a copy of cursor item before drag start
         private readonly Dictionary<int, int> draggedSlots = new(); // And keep track of the initial count of each dragged slot
         private bool dragging = false;
         
@@ -122,6 +120,8 @@ namespace CraftSharp
         private PlayerController.PlayerActionEventHandler? playerActionHandler;
         private bool sessionInitialized;
         #endregion
+
+        #nullable disable
 
         private void Awake() // In case where the client wasn't properly assigned before
         {
@@ -1383,7 +1383,7 @@ namespace CraftSharp
                         break;
                     case InventoryActionType.AddDragLeft:
                     case InventoryActionType.AddDragRight:
-                        if (!dragging || draggedSlots.ContainsKey(slot)) return false;
+                        if (!dragging || draggedSlots.ContainsKey(slot) || dragStartCursorItemClone is null) return false;
                         if (ProtocolSettings.DebugMode)
                             Debug.Log($"[{actionType}] Add dragged slot [{slot}]");
                         

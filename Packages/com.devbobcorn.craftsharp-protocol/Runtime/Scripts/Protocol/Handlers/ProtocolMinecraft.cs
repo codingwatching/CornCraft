@@ -2652,7 +2652,7 @@ namespace CraftSharp.Protocol.Handlers
                 byte[] serverPublicKey, PlayerKeyPair? playerKeyPair, SessionToken session, bool shouldAuthenticate)
         {
             RSACryptoServiceProvider RSAService = CryptoHandler.DecodeRSAPublicKey(serverPublicKey);
-            byte[] secretKey = CryptoHandler.ClientAESPrivateKey ?? CryptoHandler.GenerateAESPrivateKey();
+            byte[] secretKey = CryptoHandler.GenerateAESPrivateKey();
 
             Debug.Log(Translations.Get("debug.crypto"));
 
@@ -2667,7 +2667,14 @@ namespace CraftSharp.Protocol.Handlers
                 {
                     session.SessionPreCheckTask.Wait();
                     if (session.SessionPreCheckTask.Result) // Pre-check success
-                        needCheckSession = false;
+                    {
+                        byte[]? preCheckSecretKey = session.ConsumeClientAESPrivateKey();
+                        if (preCheckSecretKey != null)
+                        {
+                            secretKey = preCheckSecretKey;
+                            needCheckSession = false;
+                        }
+                    }
                 }
 
                 // 1.20.6+

@@ -19,7 +19,7 @@ using CraftSharp.Rendering;
 namespace CraftSharp.UI
 {
     [RequireComponent(typeof (CanvasGroup))]
-    public class InventoryScreen : BaseScreen
+    public class InventoryScreen : BaseScreen, IEventListener
     {
         private static readonly ResourceLocation SPEED_ID = new("speed");
         private static readonly ResourceLocation HASTE_ID = new("haste");
@@ -1591,12 +1591,23 @@ namespace CraftSharp.UI
                 }
             };
             
-            EventManager.Instance.Register(mobEffectUpdateCallback);
-            EventManager.Instance.Register(mobEffectRemovalCallback);
-            EventManager.Instance.Register(tickSyncCallback);
-            EventManager.Instance.Register(slotUpdateCallback);
-            EventManager.Instance.Register(itemsUpdateCallback);
-            EventManager.Instance.Register(propertyUpdateCallback);
+            RebindEventListeners();
+        }
+
+        public void RebindEventListeners()
+        {
+            if (mobEffectUpdateCallback is not null)
+                EventManager.Instance.Register(mobEffectUpdateCallback);
+            if (mobEffectRemovalCallback is not null)
+                EventManager.Instance.Register(mobEffectRemovalCallback);
+            if (tickSyncCallback is not null)
+                EventManager.Instance.Register(tickSyncCallback);
+            if (slotUpdateCallback is not null)
+                EventManager.Instance.Register(slotUpdateCallback);
+            if (itemsUpdateCallback is not null)
+                EventManager.Instance.Register(itemsUpdateCallback);
+            if (propertyUpdateCallback is not null)
+                EventManager.Instance.Register(propertyUpdateCallback);
         }
 
         public override void UpdateScreen()

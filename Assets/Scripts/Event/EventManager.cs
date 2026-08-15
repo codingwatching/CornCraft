@@ -1,8 +1,14 @@
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace CraftSharp.Event
 {
+    public interface IEventListener
+    {
+        void RebindEventListeners();
+    }
+
     // Singleton Event Manager
     public class EventManager
     {
@@ -21,6 +27,25 @@ namespace CraftSharp.Event
         }
         
         private Dictionary<Type, IEventRegistrations> eventTable = new();
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void Reset()
+        {
+            instance = new EventManager();
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        private static void RebindRetainedListeners()
+        {
+            foreach (var behaviour in Resources.FindObjectsOfTypeAll<MonoBehaviour>())
+            {
+                if (behaviour.gameObject.scene.IsValid() && behaviour.gameObject.scene.isLoaded &&
+                    behaviour is IEventListener listener)
+                {
+                    listener.RebindEventListeners();
+                }
+            }
+        }
 
         public void Register<T>(Action<T> callback)
         {

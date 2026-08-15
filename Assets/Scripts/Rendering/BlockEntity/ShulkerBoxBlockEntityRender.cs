@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace CraftSharp.Rendering
 {
-    public class ShulkerBlockEntityRender : BlockEntityRender
+    public class ShulkerBlockEntityRender : BlockEntityRender, IEventListener
     {
         private static readonly ResourceLocation SHULKER_ID = new("shulker");
 
@@ -31,9 +31,15 @@ namespace CraftSharp.Rendering
                 }
             };
             
-            EventManager.Instance.Register(blockActionCallback);
+            RebindEventListeners();
 
             base.Initialize(blockLoc, blockState, blockEntityType, tags);
+        }
+
+        public void RebindEventListeners()
+        {
+            if (blockActionCallback is not null)
+                EventManager.Instance.Register(blockActionCallback);
         }
 
         private void OnDestroy()

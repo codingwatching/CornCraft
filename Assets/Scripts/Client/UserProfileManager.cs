@@ -41,6 +41,14 @@ namespace CraftSharp
         private static bool loaded;
         private static int selectedIndex;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetForPlaySession()
+        {
+            profiles.Clear();
+            loaded = false;
+            selectedIndex = 0;
+        }
+
         public static IReadOnlyList<UserProfile> Profiles => profiles;
 
         public static int SelectedIndex

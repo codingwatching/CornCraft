@@ -2,6 +2,7 @@
 using System;
 using System.Text.RegularExpressions;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace CraftSharp.Protocol.Session
@@ -20,6 +21,7 @@ namespace CraftSharp.Protocol.Session
         public byte[]? ServerPublicKey { get; set; }
 
         public Task<bool>? SessionPreCheckTask = null;
+        private byte[]? clientAESPrivateKey;
 
         public SessionToken()
         {
@@ -36,11 +38,22 @@ namespace CraftSharp.Protocol.Session
         {
             if (Id == string.Empty || PlayerId == string.Empty || ServerPublicKey == null)
                 return false;
-            Crypto.CryptoHandler.ClientAESPrivateKey ??= Crypto.CryptoHandler.GenerateAESPrivateKey();
-            string serverHash = Crypto.CryptoHandler.GetServerHash(ServerIdHash, ServerPublicKey, Crypto.CryptoHandler.ClientAESPrivateKey);
+            byte[] secretKey = Crypto.CryptoHandler.GenerateAESPrivateKey();
+            Crypto.CryptoHandler.SetCompatibilityAESPrivateKey(secretKey);
+            string serverHash = Crypto.CryptoHandler.GetServerHash(ServerIdHash, ServerPublicKey, secretKey);
             if (ProtocolHandler.SessionCheck(PlayerId, Id, serverHash))
+            {
+                byte[]? previousKey = Interlocked.Exchange(ref clientAESPrivateKey, secretKey);
+                if (previousKey != null)
+                    Array.Clear(previousKey, 0, previousKey.Length);
                 return true;
+            }
             return false;
+        }
+
+        internal byte[]? ConsumeClientAESPrivateKey()
+        {
+            return Interlocked.Exchange(ref clientAESPrivateKey, null);
         }
 
         public override string ToString()

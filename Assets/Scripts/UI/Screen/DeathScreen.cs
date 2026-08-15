@@ -8,7 +8,7 @@ using CraftSharp.Event;
 namespace CraftSharp.UI
 {
     [RequireComponent(typeof (CanvasGroup))]
-    public class DeathScreen : BaseScreen
+    public class DeathScreen : BaseScreen, IEventListener
     {
         // UI controls and objects
         [SerializeField] private Animator screenAnimator;
@@ -93,7 +93,13 @@ namespace CraftSharp.UI
                 }
             };
 
-            EventManager.Instance.Register(healthCallback);
+            RebindEventListeners();
+        }
+
+        public void RebindEventListeners()
+        {
+            if (healthCallback is not null)
+                EventManager.Instance.Register(healthCallback);
         }
 
         protected override void OnDestroy()

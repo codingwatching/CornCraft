@@ -10,7 +10,7 @@ using CraftSharp.Rendering;
 namespace CraftSharp.Control
 {
     [RequireComponent(typeof (PlayerStatusUpdater))]
-    public class PlayerController : MonoBehaviour
+    public class PlayerController : MonoBehaviour, IEventListener
     {
         // Player Config Fields
         [SerializeField] private PlayerAbilityConfig m_AbilityConfig;
@@ -180,7 +180,6 @@ namespace CraftSharp.Control
 
             // Register gamemode events for updating gamemode
             gameModeCallback = e => SetGameMode(e.GameMode);
-            EventManager.Instance.Register(gameModeCallback);
 
             // Register health update events for resetting hurt time
             healthCallback = e =>
@@ -193,7 +192,17 @@ namespace CraftSharp.Control
                     });
                 }
             };
-            EventManager.Instance.Register(healthCallback);
+            RebindEventListeners();
+        }
+
+        public void RebindEventListeners()
+        {
+            if (gameModeCallback is not null)
+                EventManager.Instance.Register(gameModeCallback);
+            if (healthCallback is not null)
+                EventManager.Instance.Register(healthCallback);
+            if (m_PlayerRender)
+                EventManager.Instance.Register<CameraAimingEvent>(m_PlayerRender.HandleAimingModeChange);
         }
 
         private void FixedUpdate()
@@ -245,6 +254,9 @@ namespace CraftSharp.Control
             
             if (healthCallback is not null)
                 EventManager.Instance.Unregister(healthCallback);
+
+            if (m_PlayerRender)
+                EventManager.Instance.Unregister<CameraAimingEvent>(m_PlayerRender.HandleAimingModeChange);
         }
 
         private void SetGameMode(GameMode gameMode)

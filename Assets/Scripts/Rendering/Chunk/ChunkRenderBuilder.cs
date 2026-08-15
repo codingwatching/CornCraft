@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using UnityEngine;
 using UnityEngine.Profiling;
 using UnityEngine.Rendering;
@@ -129,12 +130,10 @@ namespace CraftSharp.Rendering
             return float3.zero; // Swap x and z
         }
 
-        public ChunkBuildResult Build(ChunkBuildData data, ChunkRender chunkRender)
+        public ChunkBuildResult Build(ChunkBuildData data, ChunkRender chunkRender, CancellationToken cancellationToken)
         {
             try
             {
-                var ts = chunkRender.TokenSource;
-
                 int count = ChunkRender.TYPES.Length, layerMask = 0;
                 
                 // Set up vertex counter
@@ -311,14 +310,14 @@ namespace CraftSharp.Rendering
                     }
                 }
 
-                if (ts.IsCancellationRequested)
+                if (cancellationToken.IsCancellationRequested)
                     return ChunkBuildResult.Cancelled;
 
                 if (layerMask == 0) // Skip empty chunks...
                 {
                     Loom.QueueOnMainThread(() => 
                     {
-                        if (!chunkRender || !chunkRender.gameObject)
+                        if (cancellationToken.IsCancellationRequested || !chunkRender || !chunkRender.gameObject)
                             return;
 
                         // TODO Improve below cleaning
@@ -339,7 +338,7 @@ namespace CraftSharp.Rendering
                 {
                     Loom.QueueOnMainThreadMinor(() =>
                     {
-                        if (!chunkRender || !chunkRender.gameObject)
+                        if (cancellationToken.IsCancellationRequested || !chunkRender || !chunkRender.gameObject)
                             return;
                         
                         Profiler.BeginSample("Update chunk render mesh");

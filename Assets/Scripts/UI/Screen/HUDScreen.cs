@@ -12,7 +12,7 @@ using CraftSharp.Protocol.Message;
 namespace CraftSharp.UI
 {
     [RequireComponent(typeof (CanvasGroup))]
-    public class HUDScreen : BaseScreen
+    public class HUDScreen : BaseScreen, IEventListener
     {
         private const float HEALTH_MULTIPLIER = 1F;
         private static readonly Vector3 STAMINA_TARGET_OFFSET = new(0, -0.5F, 0F);
@@ -197,16 +197,7 @@ namespace CraftSharp.UI
                 chatMessage.text = styledMessage;
             };
 
-            EventManager.Instance.Register(cameraAimCallback);
-            EventManager.Instance.Register(gameModeCallback);
-            EventManager.Instance.Register(mobEffectUpdateCallback);
-            EventManager.Instance.Register(mobEffectRemovalCallback);
-            EventManager.Instance.Register(tickSyncCallback);
-            EventManager.Instance.Register(healthCallback);
-            EventManager.Instance.Register(hungerCallback);
-            EventManager.Instance.Register(experienceCallback);
-            EventManager.Instance.Register(staminaCallback);
-            EventManager.Instance.Register(chatMessageCallback);
+            RebindEventListeners();
 
             // Initialize controls
             var game = CornApp.CurrentClient;
@@ -236,6 +227,30 @@ namespace CraftSharp.UI
         private Action<ChatMessageEvent>?       chatMessageCallback;
 
         #nullable disable
+
+        public void RebindEventListeners()
+        {
+            if (cameraAimCallback is not null)
+                EventManager.Instance.Register(cameraAimCallback);
+            if (gameModeCallback is not null)
+                EventManager.Instance.Register(gameModeCallback);
+            if (mobEffectUpdateCallback is not null)
+                EventManager.Instance.Register(mobEffectUpdateCallback);
+            if (mobEffectRemovalCallback is not null)
+                EventManager.Instance.Register(mobEffectRemovalCallback);
+            if (tickSyncCallback is not null)
+                EventManager.Instance.Register(tickSyncCallback);
+            if (healthCallback is not null)
+                EventManager.Instance.Register(healthCallback);
+            if (hungerCallback is not null)
+                EventManager.Instance.Register(hungerCallback);
+            if (experienceCallback is not null)
+                EventManager.Instance.Register(experienceCallback);
+            if (staminaCallback is not null)
+                EventManager.Instance.Register(staminaCallback);
+            if (chatMessageCallback is not null)
+                EventManager.Instance.Register(chatMessageCallback);
+        }
 
         protected override void OnDestroy()
         {

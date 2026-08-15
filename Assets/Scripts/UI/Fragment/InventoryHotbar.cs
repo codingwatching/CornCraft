@@ -5,7 +5,7 @@ using CraftSharp.Event;
 
 namespace CraftSharp.UI
 {
-    public class InventoryHotbar : MonoBehaviour, IAlphaListener
+    public class InventoryHotbar : MonoBehaviour, IAlphaListener, IEventListener
     {
         private static readonly int SHOW_HASH = Animator.StringToHash("Show");
         public const int HOTBAR_LENGTH = 9;
@@ -73,8 +73,15 @@ namespace CraftSharp.UI
                 SelectSlot(e.HotbarSlot);
             };
 
-            EventManager.Instance.Register(hotbarUpdateCallback);
-            EventManager.Instance.Register(heldItemChangeCallback);
+            RebindEventListeners();
+        }
+
+        public void RebindEventListeners()
+        {
+            if (hotbarUpdateCallback is not null)
+                EventManager.Instance.Register(hotbarUpdateCallback);
+            if (heldItemChangeCallback is not null)
+                EventManager.Instance.Register(heldItemChangeCallback);
         }
 
         public void UpdateAlpha(float alpha)

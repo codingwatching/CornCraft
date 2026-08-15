@@ -10,7 +10,7 @@ using CraftSharp.Event;
 namespace CraftSharp.UI
 {
     [RequireComponent(typeof (CanvasGroup))]
-    public class ChatScreen : BaseScreen
+    public class ChatScreen : BaseScreen, IEventListener
     {
         private const int MAX_CHAT_MESSAGES = 100;
         private const string COMMAND_PREFIX = "/";
@@ -333,8 +333,15 @@ namespace CraftSharp.UI
             chatInput.m_OnUpArrowKeyNotConsumedByCompletionSelection.AddListener(PrevChatMessage);
             chatInput.m_OnDownArrowKeyNotConsumedByCompletionSelection.AddListener(NextChatMessage);
 
-            EventManager.Instance.Register(chatMessageCallback);
-            EventManager.Instance.Register(autoCompleteCallback);
+            RebindEventListeners();
+        }
+
+        public void RebindEventListeners()
+        {
+            if (chatMessageCallback is not null)
+                EventManager.Instance.Register(chatMessageCallback);
+            if (autoCompleteCallback is not null)
+                EventManager.Instance.Register(autoCompleteCallback);
         }
 
         protected override void OnDestroy()

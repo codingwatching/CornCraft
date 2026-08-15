@@ -12,7 +12,28 @@ namespace CraftSharp.Crypto
     public static class CryptoHandler
     {
         #nullable enable
+        [Obsolete("AES secrets are connection-scoped. Do not use this shared compatibility field.")]
         public static byte[]? ClientAESPrivateKey = null;
+
+        internal static void SetCompatibilityAESPrivateKey(byte[] key)
+        {
+#pragma warning disable CS0618
+            ClearCompatibilityAESPrivateKey();
+            ClientAESPrivateKey = (byte[])key.Clone();
+#pragma warning restore CS0618
+        }
+
+        [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ClearCompatibilityAESPrivateKey()
+        {
+#pragma warning disable CS0618
+            if (ClientAESPrivateKey != null)
+            {
+                Array.Clear(ClientAESPrivateKey, 0, ClientAESPrivateKey.Length);
+                ClientAESPrivateKey = null;
+            }
+#pragma warning restore CS0618
+        }
 
         #nullable disable
 

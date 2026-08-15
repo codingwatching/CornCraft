@@ -16,7 +16,7 @@ using System.Text;
 namespace CraftSharp.UI
 {
     [RequireComponent(typeof (CanvasGroup))]
-    public class PacketScreen : BaseScreen
+    public class PacketScreen : BaseScreen, IEventListener
     {
         private const int MAX_PACKET_COUNT = 20;
 
@@ -96,7 +96,7 @@ namespace CraftSharp.UI
             packetItemPool = new(CreateNewPacketItem, null, OnReleasePacketItem, null, false, 25);
 
             packetCallback = RecordNewPacketItem;
-            EventManager.Instance.Register(packetCallback);
+            RebindEventListeners();
 
             // Prepare buttons
             recordButton.onClick.AddListener(() =>
@@ -117,6 +117,12 @@ namespace CraftSharp.UI
 
             // Clear on start
             ClearPacketPreview();
+        }
+
+        public void RebindEventListeners()
+        {
+            if (packetCallback is not null)
+                EventManager.Instance.Register(packetCallback);
         }
 
         protected override void OnDestroy()

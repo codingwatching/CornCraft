@@ -20,6 +20,8 @@ namespace CraftSharp
         /// Records coordinates of chunks which has been sent to client
         /// </summary>
         private readonly HashSet<Vector2Int> sentChunks = new();
+        private Action<string> chatHandler;
+        private bool sessionInitialized;
 
         private void DummyHandleCommand(string text)
         {
@@ -120,11 +122,27 @@ namespace CraftSharp
                 }
         }
 
+        private void OnEnable()
+        {
+            if (Application.isPlaying && sessionInitialized)
+                StartCoroutine(InitializeSessionDeferred());
+        }
+
         private void Start()
         {
+            sessionInitialized = true;
+            InitializeSession();
+        }
+
+        private void InitializeSession()
+        {
             if (!client) return;
-            
-            client.OnDummySendChat += text =>
+
+            sentChunks.Clear();
+            lastPlayerChunkX = 0;
+            lastPlayerChunkZ = 0;
+
+            chatHandler ??= text =>
             {
                 if (text.StartsWith('/'))
                 {
@@ -135,11 +153,26 @@ namespace CraftSharp
                     CornClientOffline.DummyOnTextReceived(new ChatMessage($"{client.GetUsername()}: {text}", client.GetUsername(), false, 0, client.GetUserUUID()));
                 }
             };
+            client.OnDummySendChat -= chatHandler;
+            client.OnDummySendChat += chatHandler;
             
             // Send initial terrain data
             DummySendInitialTerrainData();
 
             StartCoroutine(DeferredInitialization());
+        }
+
+        private IEnumerator InitializeSessionDeferred()
+        {
+            yield return null;
+            InitializeSession();
+        }
+
+        private void OnDisable()
+        {
+            StopAllCoroutines();
+            if (client && chatHandler is not null)
+                client.OnDummySendChat -= chatHandler;
         }
 
         private IEnumerator DeferredInitialization()
